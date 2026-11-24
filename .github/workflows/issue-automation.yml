@@ -1,0 +1,14 @@
+name: Issue automation
+
+on:
+  issues:
+    types: [opened, edited, reopened, closed]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  issue:
+    uses: Monorise-Team/.github/.github/workflows/issue-automation.yml@main
+    secrets: inherit

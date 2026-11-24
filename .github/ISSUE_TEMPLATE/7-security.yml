@@ -1,0 +1,94 @@
+# Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
+name: 🔒 Utwardzanie bezpieczeństwa
+description: Hardening, zasady, ryzyko zależności. NIE dla żywych podatności.
+labels:
+  - "type: 🔒 security"
+  - "meta: ❓ needs triage"
+projects:
+  - Monorise-Team/3
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > **Nie używaj tego formularza do podatności, którą da się wykorzystać już teraz.** Zgłoszenie jest publiczne od chwili wysłania.
+        > Zamiast tego zgłoś ją prywatnie: [prywatne zgłoszenie podatności](https://github.com/Monorise-Team/TimoTime/security/advisories/new).
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Potwierdzenie jawności
+      options:
+        - label: To **nie jest** podatność możliwa do wykorzystania, a jej opublikowanie nikogo nie naraża
+          required: true
+
+  - type: textarea
+    id: weakness
+    attributes:
+      label: Słabość i jej skutek
+      description: Co jest słabsze, niż być powinno, i co z tego wynika?
+      placeholder: Jednorazowy kod logowania aplikacji na komputer da się użyć drugi raz w ciągu 10 minut.
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Proponowane zabezpieczenie
+      placeholder: Wiązać kod z PKCE aplikacji i unieważniać go po pierwszym użyciu albo po minucie.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Obszar
+      multiple: true
+      options:
+        - web
+        - server
+        - mobile
+        - time
+        - leave
+        - reports
+        - website
+        - design
+        - całe repozytorium
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorytet
+      description: P0 to produkcja leży, P1 blokuje milestone, P2 poczeka, P3 to kosmetyka.
+      options:
+        - P0-critical
+        - P1-high
+        - P2-medium
+        - P3-low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Nakład pracy
+      description: Mały to ten sam dzień, średni około 2 dni, duży około tygodnia. Bez odpowiedzi średni.
+      options:
+        - Mały
+        - Średni
+        - Duży
+    validations:
+      required: false
+
+  - type: textarea
+    id: relations
+    attributes:
+      label: Zależności
+      description: "Opcjonalne, jedna na linię. `Czeka na: #123` to zgłoszenie, które musi być gotowe wcześniej, `Część: #45` to większe zadanie, którego to jest etapem."
+      placeholder: |
+        Czeka na: #12
+        Część: #4
+    validations:
+      required: false

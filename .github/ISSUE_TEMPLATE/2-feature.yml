@@ -1,0 +1,98 @@
+# Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
+name: ✨ Nowa funkcja
+description: Nowa możliwość dla użytkownika albo rozbudowa istniejącej.
+labels:
+  - "type: ✨ feature"
+  - "meta: ❓ needs triage"
+projects:
+  - Monorise-Team/3
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Czego użytkownik dzisiaj nie może zrobić i dlaczego to boli?
+      placeholder: Anna z Acme dostaje ok. 100 maili dziennie i nie może odłożyć wątku na później, więc ważne sprawy giną.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propozycja
+      description: Co ma się dziać zamiast tego. Opisz zachowanie, nie kod. Makiety wrzuć tutaj.
+      placeholder: Wątek można odłożyć do wybranej daty i godziny; wraca na górę skrzynki z przypomnieniem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Kryteria akceptacji
+      description: Po czym poznamy, że gotowe. Z tego powstanie lista kontrolna w pull requeście.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Obszar
+      multiple: true
+      options:
+        - web
+        - server
+        - mobile
+        - time
+        - leave
+        - reports
+        - website
+        - design
+        - nie wiem
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorytet
+      options:
+        - P1-high
+        - P2-medium
+        - P3-low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Nakład pracy
+      description: Mały to ten sam dzień, średni około 2 dni, duży około tygodnia. Bez odpowiedzi średni.
+      options:
+        - Mały
+        - Średni
+        - Duży
+    validations:
+      required: false
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Poza zakresem
+      description: Opcjonalne, ale skuteczne. Czego to zgłoszenie celowo nie robi.
+      placeholder: Odkładanie na serwerze dostawcy poczty, synchronizacja odłożonych między urządzeniami.
+    validations:
+      required: false
+
+  - type: textarea
+    id: relations
+    attributes:
+      label: Zależności
+      description: "Opcjonalne, jedna na linię. `Czeka na: #123` to zgłoszenie, które musi być gotowe wcześniej, `Część: #45` to większe zadanie, którego to jest etapem."
+      placeholder: |
+        Czeka na: #12
+        Część: #4
+    validations:
+      required: false

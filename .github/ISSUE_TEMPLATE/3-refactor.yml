@@ -1,0 +1,97 @@
+# Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
+name: ♻️ Refaktor / wydajność
+description: Poprawa kształtu albo szybkości istniejącego kodu, bez zmiany tego, co robi.
+labels:
+  - "type: ♻️ refactor"
+  - "meta: ❓ needs triage"
+projects:
+  - Monorise-Team/3
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Rodzaj
+      description: "Wydajność dostaje przy triage etykietę `type: ⚡ perf`."
+      options:
+        - Refaktor, czyli struktura, czytelność, duplikacja
+        - Wydajność, czyli szybkość, pamięć, rozmiar paczki, koszt zapytań
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Co jest nie tak i dlaczego to boli
+      description: Konkretny koszt, np. wywołane błędy, stracony czas, wolniejsze ekrany.
+      placeholder: Odświeżanie połączenia IMAP jest powielone w trzech miejscach; w tym miesiącu dwa błędy wzięły się z miejsca, które o nim zapomniało.
+    validations:
+      required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: Stan docelowy
+      placeholder: Jedna funkcja `withMailbox(account, fn)` używana wszędzie.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Obszar
+      multiple: true
+      options:
+        - web
+        - server
+        - mobile
+        - time
+        - leave
+        - reports
+        - website
+        - design
+        - nie wiem
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorytet
+      options:
+        - P1-high
+        - P2-medium
+        - P3-low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Nakład pracy
+      description: Mały to ten sam dzień, średni około 2 dni, duży około tygodnia. Bez odpowiedzi średni.
+      options:
+        - Mały
+        - Średni
+        - Duży
+    validations:
+      required: false
+
+  - type: input
+    id: safety
+    attributes:
+      label: Jak sprawdzimy, że nic się nie zepsuło
+      description: Opcjonalne. Refaktor bez siatki bezpieczeństwa to przepisywanie.
+      placeholder: Testy obejmują ponowne połączenie i wygaśnięcie sesji.
+    validations:
+      required: false
+
+  - type: textarea
+    id: relations
+    attributes:
+      label: Zależności
+      description: "Opcjonalne, jedna na linię. `Czeka na: #123` to zgłoszenie, które musi być gotowe wcześniej, `Część: #45` to większe zadanie, którego to jest etapem."
+      placeholder: |
+        Czeka na: #12
+        Część: #4
+    validations:
+      required: false

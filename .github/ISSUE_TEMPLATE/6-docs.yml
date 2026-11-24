@@ -1,0 +1,60 @@
+# Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
+name: 📚 Dokumentacja
+description: Czegoś brakuje, coś jest błędne, nieaktualne albo niejasne.
+labels:
+  - "type: 📚 docs"
+  - "meta: ❓ needs triage"
+projects:
+  - Monorise-Team/3
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Gdzie
+      description: Ścieżka do pliku, adres albo nazwa sekcji.
+      placeholder: README.md, sekcja „Uruchomienie lokalne”
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Co jest nie tak
+      description: Brakuje, błędne, nieaktualne czy niejasne, i na czym to polega.
+      placeholder: Brakuje informacji, że przed `pnpm dev` trzeba uruchomić bazę w Dockerze. Na świeżym klonie serwer nie startuje.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorytet
+      options:
+        - P1-high
+        - P2-medium
+        - P3-low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Nakład pracy
+      description: Mały to ten sam dzień, średni około 2 dni, duży około tygodnia. Bez odpowiedzi średni.
+      options:
+        - Mały
+        - Średni
+        - Duży
+    validations:
+      required: false
+
+  - type: textarea
+    id: relations
+    attributes:
+      label: Zależności
+      description: "Opcjonalne, jedna na linię. `Czeka na: #123` to zgłoszenie, które musi być gotowe wcześniej, `Część: #45` to większe zadanie, którego to jest etapem."
+      placeholder: |
+        Czeka na: #12
+        Część: #4
+    validations:
+      required: false

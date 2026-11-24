@@ -1,0 +1,9 @@
+# Wygenerowane z Monorise-Team/.github przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Zgłoś podatność prywatnie
+    url: https://github.com/Monorise-Team/TimoTime/security/advisories/new
+    about: Nie zakładaj publicznego zgłoszenia dla podatności, którą da się wykorzystać.
+  - name: 💬 Kontakt z Monorise
+    url: mailto:hello@monorise.studio
+    about: Pytania o współpracę i wycenę projektu.

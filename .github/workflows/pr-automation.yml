@@ -1,0 +1,13 @@
+name: PR automation
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr:
+    uses: Monorise-Team/.github/.github/workflows/pr-automation.yml@main
