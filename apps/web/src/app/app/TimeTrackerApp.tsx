@@ -5,8 +5,10 @@ import {
   createClient,
   TIME_ENTRY_KIND_LABELS,
   type Me,
+  type TeamTimeEntry,
   type TimeEntry,
   type TimeEntryKind,
+  type TimoTimeClient,
 } from "@timotime/client";
 import {
   AppBackdrop,
@@ -25,7 +27,7 @@ import {
   ThemeProvider,
   type BadgeTone,
 } from "@monorise-team/ui";
-import { Briefcase, Clock, Coffee, Home, LogOut, Play, Square } from "lucide-react";
+import { Briefcase, Clock, Coffee, Home, Lock, LogOut, Play, RefreshCw, Square, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   currentWeekRange,
@@ -35,6 +37,7 @@ import {
   formatLiveClock,
   formatTime,
   groupEntriesByDay,
+  groupTeamEntriesByEmployee,
   todayRange,
   type DayGroup,
 } from "@/lib/time-format";
@@ -43,6 +46,8 @@ import {
 function readClock(): number {
   return Date.now();
 }
+
+const DEFAULT_NO_ACCESS_MESSAGE = "TimoTime nie jest włączony dla Twojego konta. Poproś Ownera firmy o dostęp.";
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   expired: "Sesja logowania wygasła. Spróbuj zalogować się ponownie.",
@@ -79,6 +84,7 @@ function TimeTrackerContent() {
   const [me, setMe] = useState<Me | null>(null);
   const [authState, setAuthState] = useState<"loading" | "signed-out" | "signed-in" | "error">("loading");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState<string | null>(null);
   const [current, setCurrent] = useState<TimeEntry | null>(null);
   const [todayEntries, setTodayEntries] = useState<TimeEntry[]>([]);
   const [weekEntries, setWeekEntries] = useState<TimeEntry[]>([]);
@@ -89,12 +95,55 @@ function TimeTrackerContent() {
 
   const fetchAll = useCallback(async () => {
     const profile = await client.session.me();
-    const [active, todayList, weekList] = await Promise.all([
-      client.time.current(),
-      client.time.entries(todayRange()),
-      client.time.entries(currentWeekRange()),
-    ]);
-    return { profile, active, todayEntries: todayList.entries, weekEntries: weekList.entries };
+
+    if (!profile.capabilities.trackOwnTime) {
+      let deniedMessage: string | null = null;
+      if (!profile.capabilities.viewTeam) {
+        try {
+          await client.time.current();
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 403) {
+            deniedMessage = error.message;
+          } else {
+            throw error;
+          }
+        }
+        deniedMessage ??= DEFAULT_NO_ACCESS_MESSAGE;
+      }
+      return {
+        profile,
+        deniedMessage,
+        active: null as TimeEntry | null,
+        todayEntries: [] as TimeEntry[],
+        weekEntries: [] as TimeEntry[],
+      };
+    }
+
+    try {
+      const [active, todayList, weekList] = await Promise.all([
+        client.time.current(),
+        client.time.entries(todayRange()),
+        client.time.entries(currentWeekRange()),
+      ]);
+      return {
+        profile,
+        deniedMessage: null,
+        active,
+        todayEntries: todayList.entries,
+        weekEntries: weekList.entries,
+      };
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        return {
+          profile,
+          deniedMessage: error.message,
+          active: null as TimeEntry | null,
+          todayEntries: [] as TimeEntry[],
+          weekEntries: [] as TimeEntry[],
+        };
+      }
+      throw error;
+    }
   }, [client]);
 
   const loadTimeData = useCallback(async () => {
@@ -106,15 +155,18 @@ function TimeTrackerContent() {
     setCurrent(active);
     setTodayEntries(todayList.entries);
     setWeekEntries(weekList.entries);
+    setAccessDeniedMessage(null);
     setNowMs(readClock());
   }, [client]);
 
   const reload = useCallback(async () => {
     setAuthState("loading");
     setAuthError(null);
+    setAccessDeniedMessage(null);
     try {
       const data = await fetchAll();
       setMe(data.profile);
+      setAccessDeniedMessage(data.deniedMessage);
       setCurrent(data.active);
       setTodayEntries(data.todayEntries);
       setWeekEntries(data.weekEntries);
@@ -138,6 +190,7 @@ function TimeTrackerContent() {
       (data) => {
         if (cancelled) return;
         setMe(data.profile);
+        setAccessDeniedMessage(data.deniedMessage);
         setCurrent(data.active);
         setTodayEntries(data.todayEntries);
         setWeekEntries(data.weekEntries);
@@ -183,6 +236,10 @@ function TimeTrackerContent() {
         setAuthState("signed-out");
         return;
       }
+      if (error instanceof ApiError && error.status === 403) {
+        setAccessDeniedMessage(error.message);
+        return;
+      }
       setActionError(error instanceof Error ? error.message : "Nie udało się rozpocząć wpisu.");
     } finally {
       setBusy(false);
@@ -201,6 +258,10 @@ function TimeTrackerContent() {
         setAuthState("signed-out");
         return;
       }
+      if (error instanceof ApiError && error.status === 403) {
+        setAccessDeniedMessage(error.message);
+        return;
+      }
       setActionError(error instanceof Error ? error.message : "Nie udało się zakończyć wpisu.");
     } finally {
       setBusy(false);
@@ -215,11 +276,17 @@ function TimeTrackerContent() {
       setCurrent(null);
       setTodayEntries([]);
       setWeekEntries([]);
+      setAccessDeniedMessage(null);
       setAuthState("signed-out");
     } finally {
       setBusy(false);
     }
   }
+
+  const handleUnauthorized = useCallback(() => {
+    setMe(null);
+    setAuthState("signed-out");
+  }, []);
 
   const todayGroups = useMemo(
     () => groupEntriesByDay(todayEntries, nowMs, todayRange(new Date(nowMs))),
@@ -292,6 +359,102 @@ function TimeTrackerContent() {
   }
 
   const elapsedMs = current ? entryDurationMs(current, nowMs) : 0;
+  const canTrackOwn = me.capabilities.trackOwnTime && !accessDeniedMessage;
+  const canViewTeam = me.capabilities.viewTeam;
+
+  const ownTrackerSection = (
+    <div className="flex flex-col gap-5">
+      <Card surface="reading" className="flex flex-col gap-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium tracking-wide text-text-tertiary uppercase">Bieżący status</span>
+            <div className="flex items-center gap-2.5">
+              <Badge tone={current ? KIND_TONES[current.kind] : "neutral"} className="px-2.5">
+                {current ? TIME_ENTRY_KIND_LABELS[current.kind] : "Poza pracą"}
+              </Badge>
+              {current ? <span className="text-xs text-text-secondary">od {formatTime(current.startedAt)}</span> : null}
+            </div>
+          </div>
+          <p aria-live="off" className="font-mono text-2xl font-semibold tracking-tight text-text-primary tabular-nums">
+            {current ? formatLiveClock(elapsedMs) : "00:00:00"}
+          </p>
+        </div>
+
+        {current?.note ? <p className="text-sm text-text-secondary">Notatka: {current.note}</p> : null}
+
+        <TextField
+          label="Notatka do nowego wpisu (opcjonalnie)"
+          placeholder="Np. spotkanie z klientem, prace w magazynie"
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          maxLength={500}
+          disabled={busy}
+        />
+
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Zmiana statusu czasu pracy">
+          {STATUS_ACTIONS.map((action) => {
+            const isActive = current?.kind === action.kind;
+            return (
+              <Button
+                key={action.kind}
+                variant={isActive ? "primary" : "outline"}
+                size="md"
+                icon={action.icon}
+                onClick={() => void handleStart(action.kind)}
+                disabled={busy}
+                aria-pressed={isActive}
+              >
+                {action.label}
+              </Button>
+            );
+          })}
+          <Button
+            variant="danger"
+            size="md"
+            icon={<Square aria-hidden />}
+            onClick={() => void handleStop()}
+            disabled={busy || !current}
+          >
+            Zakończ
+          </Button>
+        </div>
+
+        {actionError ? (
+          <p role="alert" className="text-sm text-danger">
+            {actionError}
+          </p>
+        ) : null}
+      </Card>
+
+      <Card surface="middle" className="flex flex-col">
+        <Tabs defaultValue="today" className="flex flex-col">
+          <CardHeader className="justify-between">
+            <CardTitle>Wpisy czasu pracy</CardTitle>
+            <TabsList aria-label="Zakres wpisów">
+              <TabsTrigger value="today">Dzisiaj</TabsTrigger>
+              <TabsTrigger value="week">Ten tydzień</TabsTrigger>
+            </TabsList>
+          </CardHeader>
+
+          <TabsContent value="today" className="p-4">
+            <DayGroupList
+              groups={todayGroups}
+              emptyTitle="Brak wpisów z dzisiaj"
+              emptyDescription="Kliknij Rozpocznij pracę albo inny status powyżej, aby dodać pierwszy wpis."
+            />
+          </TabsContent>
+
+          <TabsContent value="week" className="p-4">
+            <DayGroupList
+              groups={weekGroups}
+              emptyTitle="Brak wpisów w tym tygodniu"
+              emptyDescription="Wszystkie wpisy od poniedziałku do niedzieli pojawią się w tym miejscu."
+            />
+          </TabsContent>
+        </Tabs>
+      </Card>
+    </div>
+  );
 
   return (
     <>
@@ -321,103 +484,257 @@ function TimeTrackerContent() {
         </header>
 
         <main className="flex flex-col gap-5">
-          <Card surface="reading" className="flex flex-col gap-4 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium tracking-wide text-text-tertiary uppercase">Bieżący status</span>
-                <div className="flex items-center gap-2.5">
-                  <Badge tone={current ? KIND_TONES[current.kind] : "neutral"} className="px-2.5">
-                    {current ? TIME_ENTRY_KIND_LABELS[current.kind] : "Poza pracą"}
-                  </Badge>
-                  {current ? (
-                    <span className="text-xs text-text-secondary">od {formatTime(current.startedAt)}</span>
-                  ) : null}
-                </div>
-              </div>
-              <p
-                aria-live="off"
-                className="font-mono text-2xl font-semibold tracking-tight text-text-primary tabular-nums"
-              >
-                {current ? formatLiveClock(elapsedMs) : "00:00:00"}
-              </p>
-            </div>
-
-            {current?.note ? <p className="text-sm text-text-secondary">Notatka: {current.note}</p> : null}
-
-            <TextField
-              label="Notatka do nowego wpisu (opcjonalnie)"
-              placeholder="Np. spotkanie z klientem, prace w magazynie"
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              maxLength={500}
-              disabled={busy}
-            />
-
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Zmiana statusu czasu pracy">
-              {STATUS_ACTIONS.map((action) => {
-                const isActive = current?.kind === action.kind;
-                return (
-                  <Button
-                    key={action.kind}
-                    variant={isActive ? "primary" : "outline"}
-                    size="md"
-                    icon={action.icon}
-                    onClick={() => void handleStart(action.kind)}
-                    disabled={busy}
-                    aria-pressed={isActive}
-                  >
-                    {action.label}
+          {!canTrackOwn && !canViewTeam ? (
+            <Card surface="reading" className="p-6">
+              <EmptyState
+                icon={<Lock aria-hidden />}
+                title="Brak dostępu do TimoTime"
+                description={accessDeniedMessage ?? DEFAULT_NO_ACCESS_MESSAGE}
+                action={
+                  <Button variant="primary" size="md" onClick={() => void reload()}>
+                    Odśwież
                   </Button>
-                );
-              })}
-              <Button
-                variant="danger"
-                size="md"
-                icon={<Square aria-hidden />}
-                onClick={() => void handleStop()}
-                disabled={busy || !current}
-              >
-                Zakończ
-              </Button>
-            </div>
+                }
+              />
+            </Card>
+          ) : canTrackOwn && canViewTeam ? (
+            <Tabs defaultValue="own" className="flex flex-col gap-4">
+              <TabsList aria-label="Widok aplikacji">
+                <TabsTrigger value="own">Mój czas</TabsTrigger>
+                <TabsTrigger value="team">Zespół</TabsTrigger>
+              </TabsList>
 
-            {actionError ? (
-              <p role="alert" className="text-sm text-danger">
-                {actionError}
-              </p>
-            ) : null}
-          </Card>
+              <TabsContent value="own">{ownTrackerSection}</TabsContent>
 
-          <Card surface="middle" className="flex flex-col">
-            <Tabs defaultValue="today" className="flex flex-col">
-              <CardHeader className="justify-between">
-                <CardTitle>Wpisy czasu pracy</CardTitle>
-                <TabsList aria-label="Zakres wpisów">
-                  <TabsTrigger value="today">Dzisiaj</TabsTrigger>
-                  <TabsTrigger value="week">Ten tydzień</TabsTrigger>
-                </TabsList>
-              </CardHeader>
-
-              <TabsContent value="today" className="p-4">
-                <DayGroupList
-                  groups={todayGroups}
-                  emptyTitle="Brak wpisów z dzisiaj"
-                  emptyDescription="Kliknij Rozpocznij pracę albo inny status powyżej, aby dodać pierwszy wpis."
-                />
-              </TabsContent>
-
-              <TabsContent value="week" className="p-4">
-                <DayGroupList
-                  groups={weekGroups}
-                  emptyTitle="Brak wpisów w tym tygodniu"
-                  emptyDescription="Wszystkie wpisy od poniedziałku do niedzieli pojawią się w tym miejscu."
-                />
+              <TabsContent value="team">
+                <TeamPanel client={client} onUnauthorized={handleUnauthorized} />
               </TabsContent>
             </Tabs>
-          </Card>
+          ) : canViewTeam ? (
+            <TeamPanel client={client} onUnauthorized={handleUnauthorized} />
+          ) : (
+            ownTrackerSection
+          )}
         </main>
       </div>
     </>
+  );
+}
+
+function TeamPanel({ client, onUnauthorized }: { client: TimoTimeClient; onUnauthorized: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentEntries, setCurrentEntries] = useState<TeamTimeEntry[]>([]);
+  const [todayEntries, setTodayEntries] = useState<TeamTimeEntry[]>([]);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  const fetchTeamData = useCallback(async () => {
+    const [activeList, entriesList] = await Promise.all([client.team.current(), client.team.entries(todayRange())]);
+    return { activeEntries: activeList.entries, todayEntries: entriesList.entries };
+  }, [client]);
+
+  const reloadTeam = useCallback(
+    async (isRefresh: boolean) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchTeamData();
+        setCurrentEntries(data.activeEntries);
+        setTodayEntries(data.todayEntries);
+        setNowMs(readClock());
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          onUnauthorized();
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Nie udało się wczytać danych zespołu.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [fetchTeamData, onUnauthorized],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchTeamData().then(
+      (data) => {
+        if (cancelled) return;
+        setCurrentEntries(data.activeEntries);
+        setTodayEntries(data.todayEntries);
+        setNowMs(readClock());
+        setLoading(false);
+      },
+      (err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 401) {
+          onUnauthorized();
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Nie udało się wczytać danych zespołu.");
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchTeamData, onUnauthorized]);
+
+  useEffect(() => {
+    if (currentEntries.length === 0) return;
+    const timer = window.setInterval(() => setNowMs(readClock()), 1000);
+    return () => window.clearInterval(timer);
+  }, [currentEntries.length]);
+
+  const employeeGroups = useMemo(
+    () => groupTeamEntriesByEmployee(todayEntries, nowMs, todayRange(new Date(nowMs))),
+    [todayEntries, nowMs],
+  );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card surface="reading" className="p-6">
+        <EmptyState
+          icon={<Lock aria-hidden />}
+          title="Nie udało się wczytać widoku zespołu"
+          description={error}
+          action={
+            <Button variant="primary" size="md" onClick={() => void reloadTeam(false)}>
+              Spróbuj ponownie
+            </Button>
+          }
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Card surface="reading" className="flex flex-col">
+        <CardHeader className="justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle>Kto teraz pracuje</CardTitle>
+            <Badge tone={currentEntries.length > 0 ? "success" : "neutral"}>{currentEntries.length}</Badge>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw aria-hidden />}
+            onClick={() => void reloadTeam(true)}
+            disabled={refreshing}
+          >
+            {refreshing ? "Odświeżanie…" : "Odśwież"}
+          </Button>
+        </CardHeader>
+
+        <div className="p-4">
+          {currentEntries.length === 0 ? (
+            <EmptyState
+              icon={<Users aria-hidden />}
+              title="Nikt teraz nie pracuje"
+              description="Gdy osoby z Twojego zespołu rozpoczną pracę, ich bieżący status pojawi się tutaj."
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {currentEntries.map((entry) => {
+                const fullName = `${entry.employee.firstName} ${entry.employee.lastName}`.trim();
+                return (
+                  <li
+                    key={entry.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-row bg-bg-tertiary/60 px-3 py-2.5"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary">{fullName}</span>
+                      <Badge tone={KIND_TONES[entry.kind]} className="px-2">
+                        {TIME_ENTRY_KIND_LABELS[entry.kind]}
+                      </Badge>
+                      <span className="text-xs text-text-secondary tabular-nums">od {formatTime(entry.startedAt)}</span>
+                      {entry.note ? <span className="text-xs text-text-secondary">({entry.note})</span> : null}
+                    </div>
+                    <span className="text-sm font-medium text-text-primary tabular-nums">
+                      {formatDuration(entryDurationMs(entry, nowMs))}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </Card>
+
+      <Card surface="middle" className="flex flex-col">
+        <CardHeader>
+          <CardTitle>Dzisiejsze wpisy zespołu</CardTitle>
+        </CardHeader>
+
+        <div className="p-4">
+          {employeeGroups.length === 0 ? (
+            <EmptyState
+              icon={<Clock aria-hidden />}
+              title="Brak wpisów zespołu z dzisiaj"
+              description="Dzisiejsze wpisy czasu pracy osób z Twojego zespołu pojawią się w tym miejscu."
+            />
+          ) : (
+            <div className="flex flex-col gap-5">
+              {employeeGroups.map((group) => (
+                <section key={group.employee.id} aria-label={group.fullName} className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-secondary pb-1.5">
+                    <h3 className="text-sm font-semibold text-text-primary">{group.fullName}</h3>
+                    <div className="flex items-center gap-3 text-xs text-text-secondary tabular-nums">
+                      <span>Suma pracy: {formatDuration(group.workMs)}</span>
+                      {group.breakMs > 0 ? <span>Przerwy: {formatDuration(group.breakMs)}</span> : null}
+                    </div>
+                  </div>
+
+                  <ul className="flex flex-col gap-1.5">
+                    {group.entries.map((slice) => {
+                      const { entry } = slice;
+                      const startLabel = slice.startedBeforeRange ? "00:00" : formatTime(entry.startedAt);
+                      const endLabel = slice.endedAfterRange
+                        ? "24:00"
+                        : entry.endedAt
+                          ? formatTime(entry.endedAt)
+                          : "teraz";
+                      return (
+                        <li
+                          key={entry.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-row bg-bg-tertiary/60 px-3 py-2"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge tone={KIND_TONES[entry.kind]} className="px-2">
+                              {TIME_ENTRY_KIND_LABELS[entry.kind]}
+                            </Badge>
+                            <span className="text-sm text-text-primary tabular-nums">
+                              {startLabel} do {endLabel}
+                            </span>
+                            {entry.note ? <span className="text-xs text-text-secondary">({entry.note})</span> : null}
+                          </div>
+                          <span className="text-sm font-medium text-text-primary tabular-nums">
+                            {formatDuration(slice.durationMs)}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }
 
