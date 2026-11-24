@@ -1,0 +1,30 @@
+{
+  "name": "@timotime/client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typowany klient API TimoTime dla przeglądarki i telefonu",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint --max-warnings=0 .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@timotime/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@monorise-team/config": "0.0.1-dev.6",
+    "eslint": "^10.15.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.1"
+  }
+}
