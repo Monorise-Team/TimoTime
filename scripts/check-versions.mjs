@@ -7,7 +7,7 @@
  * - .release-please-manifest.json,
  * - wszystkie @monorise-team/* w jednej, dokładnej wersji (wspólne biblioteki też mają jedną wersję).
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const root = join(import.meta.dirname, "..");
@@ -19,7 +19,12 @@ const problems = [];
 const manifest = json(".release-please-manifest.json")["."];
 if (manifest !== version) problems.push(`.release-please-manifest.json: ${manifest}, a package.json: ${version}`);
 
-const workspaces = ["apps", "packages"].flatMap((dir) => readdirSync(join(root, dir)).map((name) => `${dir}/${name}`));
+// Tylko katalogi z package.json: pomija pliki systemowe (np. .DS_Store w macOS) i puste katalogi.
+const workspaces = ["apps", "packages"].flatMap((dir) =>
+  readdirSync(join(root, dir), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(root, dir, entry.name, "package.json")))
+    .map((entry) => `${dir}/${entry.name}`),
+);
 const shared = new Map();
 for (const dir of ["", ...workspaces]) {
   const file = dir ? `${dir}/package.json` : "package.json";

@@ -19,6 +19,12 @@
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
+    },
+    "@timotime/db#typecheck": {
+      "dependsOn": ["^build", "build"]
+    },
+    "@timotime/db#lint": {
+      "dependsOn": ["^build", "build"]
     }
   }
 }
