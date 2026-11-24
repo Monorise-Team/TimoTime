@@ -6,7 +6,7 @@ Ewidencja czasu pracy Monorise w przeglądarce i na telefonie: start i stop prac
 | ------------------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | [`apps/web`](apps/web)                     | Next.js: strona produktu i API `/api/v1`, a pod drugim adresem aplikacja w przeglądarce      | `time.monorise.studio`, `timo-time.monorise.studio` |
 | [`apps/mobile`](apps/mobile)               | Expo (iOS, Android)                                                                          | iOS, Android                                        |
-| [`packages/contracts`](packages/contracts) | typy i schematy API oraz manifest uprawnień (`definePermissions`)                            |                                                     |
+| [`packages/contracts`](packages/contracts) | typy i schematy API, manifest uprawnień (`definePermissions`) i gotowe role produktu         |                                                     |
 | [`packages/client`](packages/client)       | typowany klient API dla przeglądarki i telefonu oraz zarządzanie sesją aplikacji mobilnej    |                                                     |
 | [`packages/db`](packages/db)               | baza `timo_time`: schemat Prisma, migracje z RLS, indeks jednego otwartego wpisu, `withUser` |                                                     |
 
@@ -50,6 +50,23 @@ Logowanie na telefonie: przycisk „Zaloguj się kontem Monorise” otwiera ekra
 PostgreSQL z Prismą (ADR-0096), lokalnie w Dockerze na porcie 5435. Serwer łączy się rolą `timo_time_app`, którą zawsze obowiązuje RLS: wpis czasu pracy widzi i zmienia tylko jego właściciel w swojej firmie (ADR-0037). Częściowy indeks unikalny na `ended_at IS NULL` gwarantuje w bazie najwyżej jeden otwarty wpis na osobę.
 
 Zmiana schematu: edytuj `packages/db/prisma/schema.prisma`, wygeneruj migrację w `packages/db` (`pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`) do nowego katalogu w `packages/db/prisma/migrations/` i dodaj polityki RLS dla nowych tabel z danymi osób lub firm.
+
+## Rejestracja uprawnień w MonoriseCore
+
+TimoTime deklaruje w kodzie (`packages/contracts/src/permissions.ts`) swój manifest uprawnień (`TIMOTIME_PERMISSION_MANIFEST`) oraz gotowe role produktu (`TIMOTIME_ROLE_TEMPLATES`: Pracownik i Kierownik). Polecenie rejestracji pobiera w MonoriseCore token maszynowy OAuth 2.1 (`grant_type=client_credentials`, zakres `core:permissions.register`), po czym wysyła najpierw manifest na `PUT /core/v1/products/timotime/permissions`, a następnie szablony ról na `PUT /core/v1/products/timotime/role-templates`. Operacja jest idempotentna: ponowne uruchomienie bez zmian niczego nie modyfikuje.
+
+Kiedy uruchamiać: lokalnie po `pnpm oauth:seed` i uruchomieniu MonoriseCore oraz po zmianie uprawnień albo gotowych ról w TimoTime. Po uruchomieniu wdrożeń TimoTime i Core (ADR-0097) to samo polecenie będzie wywoływał krok workflow przy wdrożeniu.
+
+```bash
+pnpm permissions:register
+```
+
+Wymagane zmienne środowiskowe (lokalnie z fallbackiem do `apps/web/.env.local`, który tworzy `pnpm setup:env`):
+
+- `CORE_AUTH_URL`: adres serwera logowania MonoriseCore (np. `http://localhost:3100`),
+- `CORE_API_URL`: adres Core API i odbiorca tokenu maszynowego (np. `http://localhost:3200`),
+- `TIMOTIME_OAUTH_CLIENT_ID`: identyfikator poufnego klienta produktu (`timotime-web`),
+- `TIMOTIME_OAUTH_CLIENT_SECRET`: sekret tego klienta (lokalnie z `pnpm oauth:seed` w MonoriseCore).
 
 ## Kontrole
 
