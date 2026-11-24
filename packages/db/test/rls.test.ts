@@ -65,7 +65,13 @@ describe("RLS: wpisy czasu pracy widzi i zmienia tylko ich właściciel w swojej
   it("sesje przeglądarki są dostępne po identyfikatorze bez ustawionej firmy", async () => {
     const id = `skrot-${uuidv7()}`;
     await db.session.create({
-      data: { id, accountId: anna.accountId, organizationId: acme, expiresAt: new Date(Date.now() + 60_000), data: "x" },
+      data: {
+        id,
+        accountId: anna.accountId,
+        organizationId: acme,
+        expiresAt: new Date(Date.now() + 60_000),
+        data: "x",
+      },
     });
     expect((await db.session.findUnique({ where: { id } }))?.accountId).toBe(anna.accountId);
     await db.session.delete({ where: { id } });

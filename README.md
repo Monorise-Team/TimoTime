@@ -2,13 +2,13 @@
 
 Ewidencja czasu pracy Monorise w przeglądarce i na telefonie: start i stop pracy, przerwy, praca zdalna i wyjścia służbowe. Logowanie tylko kontem Monorise przez MonoriseCore (`@monorise-team/auth`), baza PostgreSQL z Prismą i RLS (ADR-0095, ADR-0096).
 
-| Część                                      | Co                                                                                         | Adres                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| [`apps/web`](apps/web)                     | Next.js: strona produktu i API `/api/v1`, a pod drugim adresem aplikacja w przeglądarce    | `time.monorise.studio`, `timo-time.monorise.studio`  |
-| [`apps/mobile`](apps/mobile)               | Expo (iOS, Android)                                                                        | iOS, Android                                         |
-| [`packages/contracts`](packages/contracts) | typy i schematy API oraz manifest uprawnień (`definePermissions`)                          |                                                      |
-| [`packages/client`](packages/client)       | typowany klient API dla przeglądarki i telefonu oraz zarządzanie sesją aplikacji mobilnej  |                                                      |
-| [`packages/db`](packages/db)               | baza `timo_time`: schemat Prisma, migracje z RLS, indeks jednego otwartego wpisu, `withUser` |                                                    |
+| Część                                      | Co                                                                                           | Adres                                               |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [`apps/web`](apps/web)                     | Next.js: strona produktu i API `/api/v1`, a pod drugim adresem aplikacja w przeglądarce      | `time.monorise.studio`, `timo-time.monorise.studio` |
+| [`apps/mobile`](apps/mobile)               | Expo (iOS, Android)                                                                          | iOS, Android                                        |
+| [`packages/contracts`](packages/contracts) | typy i schematy API oraz manifest uprawnień (`definePermissions`)                            |                                                     |
+| [`packages/client`](packages/client)       | typowany klient API dla przeglądarki i telefonu oraz zarządzanie sesją aplikacji mobilnej    |                                                     |
+| [`packages/db`](packages/db)               | baza `timo_time`: schemat Prisma, migracje z RLS, indeks jednego otwartego wpisu, `withUser` |                                                     |
 
 ## Uruchomienie lokalne
 

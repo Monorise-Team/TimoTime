@@ -16,6 +16,11 @@ import { mobileSignIn } from "./auth";
 import { secureStore } from "./session";
 import { colors, gap, radius } from "./theme";
 
+/** Aktualny czas do licznika. Wołane w obsłudze zdarzeń i w efektach, nigdy w renderze. */
+function readClock(): number {
+  return Date.now();
+}
+
 const apiUrl = (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? "http://127.0.0.1:3300";
 
 const STATUS_ACTIONS: { kind: TimeEntryKind; label: string }[] = [
@@ -141,7 +146,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
       const data = await fetchTrackerData();
       setCurrent(data.active);
       setEntries(data.entries);
-      setNowMs(Date.now());
+      setNowMs(readClock());
       // Dane osoby z Core API (opcjonalne, gdyby token telefonu był wydany tylko dla API TimoTime).
       void client.session
         .me()
@@ -161,7 +166,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
         if (cancelled) return;
         setCurrent(data.active);
         setEntries(data.entries);
-        setNowMs(Date.now());
+        setNowMs(readClock());
         setLoading(false);
         void client.session
           .me()
@@ -183,7 +188,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
 
   useEffect(() => {
     if (!current) return;
-    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    const id = setInterval(() => setNowMs(readClock()), 1000);
     return () => clearInterval(id);
   }, [current]);
 
@@ -192,7 +197,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
     setError(null);
     try {
       await client.time.start({ kind });
-      setNowMs(Date.now());
+      setNowMs(readClock());
       await load();
     } catch (e) {
       setError(formatError(e));
@@ -206,7 +211,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
     setError(null);
     try {
       await client.time.stop();
-      setNowMs(Date.now());
+      setNowMs(readClock());
       await load();
     } catch (e) {
       setError(formatError(e));

@@ -39,6 +39,11 @@ import {
   type DayGroup,
 } from "@/lib/time-format";
 
+/** Aktualny czas do licznika. Wołane w obsłudze zdarzeń i w efektach, nigdy w renderze. */
+function readClock(): number {
+  return Date.now();
+}
+
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   expired: "Sesja logowania wygasła. Spróbuj zalogować się ponownie.",
   denied: "Logowanie zostało przerwane.",
@@ -101,7 +106,7 @@ function TimeTrackerContent() {
     setCurrent(active);
     setTodayEntries(todayList.entries);
     setWeekEntries(weekList.entries);
-    setNowMs(Date.now());
+    setNowMs(readClock());
   }, [client]);
 
   const reload = useCallback(async () => {
@@ -113,7 +118,7 @@ function TimeTrackerContent() {
       setCurrent(data.active);
       setTodayEntries(data.todayEntries);
       setWeekEntries(data.weekEntries);
-      setNowMs(Date.now());
+      setNowMs(readClock());
       setAuthState("signed-in");
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
@@ -136,7 +141,7 @@ function TimeTrackerContent() {
         setCurrent(data.active);
         setTodayEntries(data.todayEntries);
         setWeekEntries(data.weekEntries);
-        setNowMs(Date.now());
+        setNowMs(readClock());
         setAuthState("signed-in");
       },
       (error: unknown) => {
@@ -160,7 +165,7 @@ function TimeTrackerContent() {
 
   useEffect(() => {
     if (!current) return;
-    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    const timer = window.setInterval(() => setNowMs(readClock()), 1000);
     return () => window.clearInterval(timer);
   }, [current]);
 
@@ -171,7 +176,7 @@ function TimeTrackerContent() {
       const trimmed = note.trim();
       await client.time.start({ kind, note: trimmed || undefined });
       setNote("");
-      setNowMs(Date.now());
+      setNowMs(readClock());
       await loadTimeData();
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
@@ -189,7 +194,7 @@ function TimeTrackerContent() {
     setActionError(null);
     try {
       await client.time.stop();
-      setNowMs(Date.now());
+      setNowMs(readClock());
       await loadTimeData();
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {

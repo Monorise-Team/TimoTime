@@ -69,13 +69,13 @@ Instrukcje dla agentów AI (i ludzi) pracujących w repozytorium TimoTime.
 
 Ewidencja czasu pracy Monorise w przeglądarce i na telefonie (ADR-0095). Logowanie kontem Monorise przez MonoriseCore (`@monorise-team/auth`), baza PostgreSQL z Prismą i RLS (ADR-0096). Przestrzeń robocza pnpm z Turborepo. Decyzje są w repozytorium MonoriseDocumentation.
 
-| Gdzie                | Co                                                                                                                               |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Gdzie                | Co                                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apps/web`           | Next.js (port 3300): `time.` (strona produktu, API `/api/v1`) i `timo-time.` (aplikacja); routing w `src/proxy.ts`, serwer w `src/server/` |
-| `apps/mobile`        | Expo (iOS, Android); własne ekrany, tokeny z `@monorise-team/tokens`, tokeny w `expo-secure-store`                               |
-| `packages/contracts` | schematy zod, typy API i manifest uprawnień (`definePermissions` z `@monorise-team/permissions`)                                 |
-| `packages/client`    | typowany klient API (ciasteczko w przeglądarce, token na telefonie) i `createAppSession`                                         |
-| `packages/db`        | baza `timo_time`: schemat Prisma, migracje z RLS i indeksem jednego otwartego wpisu, `withUser`                                  |
+| `apps/mobile`        | Expo (iOS, Android); własne ekrany, tokeny z `@monorise-team/tokens`, tokeny w `expo-secure-store`                                         |
+| `packages/contracts` | schematy zod, typy API i manifest uprawnień (`definePermissions` z `@monorise-team/permissions`)                                           |
+| `packages/client`    | typowany klient API (ciasteczko w przeglądarce, token na telefonie) i `createAppSession`                                                   |
+| `packages/db`        | baza `timo_time`: schemat Prisma, migracje z RLS i indeksem jednego otwartego wpisu, `withUser`                                            |
 
 ## Zasady kodu
 
