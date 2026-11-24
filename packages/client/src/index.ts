@@ -114,5 +114,6 @@ export {
   type AppSession,
   type AppTokens,
   type SignInProvider,
+  type StoredAccessToken,
   type TokenStore,
 } from "./session.js";

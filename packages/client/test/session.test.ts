@@ -8,24 +8,32 @@ import {
 } from "../src/index.js";
 
 const MINUTE = 60_000;
+const CORE_API = "http://localhost:3200";
 
 function setup(start = 1_000_000) {
   let clock = start;
   let saved: AppTokens | null = null;
-  const calls = { signIn: 0, refresh: 0, revoke: [] as string[], reads: 0 };
+  const calls = {
+    signIn: 0,
+    refresh: 0,
+    refreshArgs: [] as { refreshToken: string; resource: string | undefined }[],
+    revoke: [] as string[],
+    reads: 0,
+  };
   let refreshError: Error | null = null;
-  const issue = (n: number): AppTokens => ({
-    accessToken: `dostep-${n}`,
+  const issue = (n: number, label = "dostep"): AppTokens => ({
+    accessToken: `${label}-${n}`,
     refreshToken: `odswiezanie-${n}`,
     expiresAt: clock + 5 * MINUTE,
   });
   const provider: SignInProvider = {
     signIn: async () => issue(++calls.signIn),
-    refresh: async () => {
+    refresh: async (refreshToken, resource) => {
       calls.refresh++;
+      calls.refreshArgs.push({ refreshToken, resource });
       await new Promise((resolve) => setTimeout(resolve, 5));
       if (refreshError) throw refreshError;
-      return issue(100 + calls.refresh);
+      return issue(100 + calls.refresh, resource ? `zasob:${resource}` : "dostep");
     },
     revoke: async (token) => {
       calls.revoke.push(token);
@@ -73,6 +81,47 @@ describe("sesja aplikacji na telefon", () => {
     expect(calls.refresh).toBe(1);
   });
 
+  it("pobiera i cache'uje token dla osobnego zasobu API oraz zapisuje obrócony refresh token", async () => {
+    const { session, calls, saved, advance } = setup();
+    await session.signIn();
+
+    const coreToken1 = await session.accessToken(CORE_API);
+    expect(coreToken1).toBe(`zasob:${CORE_API}-101`);
+    expect(calls.refreshArgs).toEqual([{ refreshToken: "odswiezanie-1", resource: CORE_API }]);
+    expect(saved()?.refreshToken).toBe("odswiezanie-101");
+    expect(saved()?.resources?.[CORE_API]?.accessToken).toBe(coreToken1);
+
+    // Ponowne wywołanie korzysta z cache bez kolejnego odświeżania; główny token nadal działa
+    expect(await session.accessToken(CORE_API)).toBe(coreToken1);
+    expect(await session.accessToken()).toBe("dostep-1");
+    expect(calls.refresh).toBe(1);
+
+    // Po wygaśnięciu głównego tokenu używa już nowego (obróconego) tokenu odświeżania
+    advance(6 * MINUTE);
+    expect(await session.accessToken()).toBe("dostep-102");
+    expect(calls.refreshArgs[1]).toEqual({ refreshToken: "odswiezanie-101", resource: undefined });
+    expect(saved()?.refreshToken).toBe("odswiezanie-102");
+  });
+
+  it("równoczesne żądania tego samego zasobu dzielą jedno odświeżenie, a różnych zasobów idą po kolei", async () => {
+    const { session, calls, advance } = setup();
+    await session.signIn();
+
+    const sameResource = await Promise.all([1, 2, 3].map(() => session.accessToken(CORE_API)));
+    expect(sameResource).toEqual([`zasob:${CORE_API}-101`, `zasob:${CORE_API}-101`, `zasob:${CORE_API}-101`]);
+    expect(calls.refresh).toBe(1);
+
+    // Oba tokeny wygasają; równoczesne żądania dwóch zasobów nie używają tego samego refresh tokenu naraz
+    advance(6 * MINUTE);
+    const [primaryToken, coreToken] = await Promise.all([session.accessToken(), session.accessToken(CORE_API)]);
+    expect(primaryToken).toBe("dostep-102");
+    expect(coreToken).toBe(`zasob:${CORE_API}-103`);
+    expect(calls.refreshArgs.slice(1)).toEqual([
+      { refreshToken: "odswiezanie-101", resource: undefined },
+      { refreshToken: "odswiezanie-102", resource: CORE_API },
+    ]);
+  });
+
   it("gdy Core nie przedłuża sesji, wylogowuje i czyści sejf", async () => {
     const { session, advance, failRefresh, saved } = setup();
     const changes: boolean[] = [];
@@ -81,6 +130,17 @@ describe("sesja aplikacji na telefon", () => {
     advance(6 * MINUTE);
     failRefresh(new SessionExpiredError());
     expect(await session.accessToken()).toBeNull();
+    expect(saved()).toBeNull();
+    expect(changes).toEqual([true, false]);
+  });
+
+  it("gdy Core odrzuci odświeżenie tokenu innego zasobu, wylogowuje i czyści sejf", async () => {
+    const { session, failRefresh, saved } = setup();
+    const changes: boolean[] = [];
+    session.subscribe((signedIn) => changes.push(signedIn));
+    await session.signIn();
+    failRefresh(new SessionExpiredError());
+    expect(await session.accessToken(CORE_API)).toBeNull();
     expect(saved()).toBeNull();
     expect(changes).toEqual([true, false]);
   });
@@ -94,13 +154,14 @@ describe("sesja aplikacji na telefon", () => {
     expect(saved()?.refreshToken).toBe("odswiezanie-1");
   });
 
-  it("wylogowanie czyści sejf i unieważnia token odświeżania w Core", async () => {
+  it("wylogowanie czyści sejf i unieważnia najnowszy token odświeżania w Core", async () => {
     const { session, calls, saved } = setup();
     await session.signIn();
+    await session.accessToken(CORE_API);
     await session.signOut();
     expect(saved()).toBeNull();
     expect(await session.isSignedIn()).toBe(false);
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(calls.revoke).toEqual(["odswiezanie-1"]);
+    expect(calls.revoke).toEqual(["odswiezanie-101"]);
   });
 });
