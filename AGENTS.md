@@ -55,7 +55,7 @@ Nazwę i przeznaczenie ustala właściciel. Potem: wpis w `labels/repos.json` w 
 
 ### Kierunek
 
-Gotowe biblioteki: `config`, `tokens`, `ui`, `auth`, `permissions`, `events` i `sdk`; Core API ma opis OpenAPI generowany z kodu (`/core/v1`). Teraz dziedzina Core: jednostki, pracownicy, role, dostęp do aplikacji, rejestracja i migawka uprawnień (migracje bazy scala się po zgodzie właściciela). Równolegle wstępna wersja TimoTime (ADR-0095): logowanie przez Core, `getMe`, uprawnienia i rejestracja czasu w prostym wyglądzie, żeby sprawdzić, jak aplikacje łączą się z Core. Potem `@monorise-team/testing`, na końcu `ui` i `tokens` z wyglądu starego projektu aven-mail. AvenMail i testy na żywo czekają.
+Gotowe biblioteki: `config`, `tokens`, `ui`, `auth`, `permissions`, `events` i `sdk`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, dostęp do aplikacji, migawkę uprawnień dla produktów i dziennik zdarzeń. Teraz TimoTime na tym fundamencie (ADR-0095): uprawnienia z migawki Core i widok kierownika, w prostym wyglądzie. Potem `@monorise-team/testing`, na końcu `ui` i `tokens` z wyglądu starego projektu aven-mail. AvenMail i testy na żywo czekają.
 
 ### Utrzymanie tych zasad
 
