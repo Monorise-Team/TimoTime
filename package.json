@@ -21,6 +21,7 @@
     "check:versions": "node scripts/check-versions.mjs",
     "check": "pnpm format:check && pnpm check:versions && turbo run lint typecheck test build",
     "setup:env": "node scripts/setup-env.mjs",
+    "permissions:register": "pnpm --filter @timotime/web permissions:register",
     "db:up": "docker compose up -d postgres",
     "db:migrate": "pnpm --filter @timotime/db migrate:deploy && pnpm --filter @timotime/db migrate:deploy:test",
     "shared:update": "node scripts/shared.mjs update",
