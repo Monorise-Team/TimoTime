@@ -1,0 +1,39 @@
+{
+  "name": "@timotime/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Baza timo_time: schemat Prisma, migracje z RLS i pomocnik pracy w imieniu osoby i firmy",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "lint": "eslint --max-warnings=0 .",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:deploy:test": "DATABASE_URL=${TIMOTIME_TEST_DATABASE_URL:-postgresql://timo_time_owner:timo_time_owner@localhost:5435/timo_time_test} prisma migrate deploy"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@monorise-team/config": "0.0.1-dev.6",
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.15.0",
+    "eslint": "^10.15.0",
+    "prisma": "7.10.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.1"
+  }
+}
