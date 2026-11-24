@@ -14,9 +14,9 @@
     "permissions:register": "pnpm --filter @timotime/contracts build && node scripts/register-permissions.mjs"
   },
   "dependencies": {
-    "@monorise-team/auth": "0.0.1-dev.6",
-    "@monorise-team/sdk": "0.0.1-dev.6",
-    "@monorise-team/ui": "0.0.1-dev.6",
+    "@monorise-team/auth": "0.0.1-dev.7",
+    "@monorise-team/sdk": "0.0.1-dev.7",
+    "@monorise-team/ui": "0.0.1-dev.7",
     "@timotime/client": "workspace:*",
     "@timotime/contracts": "workspace:*",
     "@timotime/db": "workspace:*",
@@ -29,7 +29,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@monorise-team/config": "0.0.1-dev.6",
+    "@monorise-team/config": "0.0.1-dev.7",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^24.10.0",
     "@types/react": "^19.3.0",

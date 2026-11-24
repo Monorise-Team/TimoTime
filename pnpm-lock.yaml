@@ -12,8 +12,8 @@ importers:
         specifier: ^21.2.4
         version: 21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3)
       '@monorise-team/config':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)
@@ -36,11 +36,11 @@ importers:
   apps/mobile:
     dependencies:
       '@monorise-team/sdk':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7
       '@monorise-team/tokens':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7
       '@timotime/client':
         specifier: workspace:*
         version: link:../../packages/client
@@ -79,8 +79,8 @@ importers:
         version: 5.11.1(react-native@0.88.1(@babel/core@7.29.13)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
     devDependencies:
       '@monorise-team/config':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -94,14 +94,14 @@ importers:
   apps/web:
     dependencies:
       '@monorise-team/auth':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(fastify@5.12.8)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(fastify@5.12.8)
       '@monorise-team/sdk':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7
       '@monorise-team/ui':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.5)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.5)
       '@timotime/client':
         specifier: workspace:*
         version: link:../../packages/client
@@ -134,8 +134,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@monorise-team/config':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
       '@tailwindcss/postcss':
         specifier: ^4.3.5
         version: 4.3.5
@@ -168,8 +168,8 @@ importers:
         version: link:../contracts
     devDependencies:
       '@monorise-team/config':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)
@@ -183,15 +183,15 @@ importers:
   packages/contracts:
     dependencies:
       '@monorise-team/permissions':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7
       zod:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
       '@monorise-team/config':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)
@@ -215,8 +215,8 @@ importers:
         version: 8.23.1
     devDependencies:
       '@monorise-team/config':
-        specifier: 0.0.1-dev.6
-        version: 0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)
       '@types/node':
         specifier: ^24.10.0
         version: 24.19.2
@@ -1208,28 +1208,28 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@monorise-team/auth@0.0.1-dev.6':
-    resolution: {integrity: sha512-LbHCt7oefZf8BvquOb4xENR9Uve1KajevLoUOfqq7vdVrbNEKQqrM5WQl9HpyZT0N/wTjZOIRO2dkCLtVICQMg==, tarball: https://npm.pkg.github.com/download/@monorise-team/auth/0.0.1-dev.6/31b65a8d0435613bcefbcb4d8c391867a90cc752}
+  '@monorise-team/auth@0.0.1-dev.7':
+    resolution: {integrity: sha512-d6I5Q/3iIe5BuyGEuX4xs2APXvalUtRIAZEOfUQL9VNrd58+7M5vbHvQXtVd6mJqfkwhD6rVSW6HwEKt0aSziw==, tarball: https://npm.pkg.github.com/download/@monorise-team/auth/0.0.1-dev.7/8912be29f3b133493d61fe10f16dd500c5a8a538}
     peerDependencies:
       fastify: ^5.0.0
 
-  '@monorise-team/config@0.0.1-dev.6':
-    resolution: {integrity: sha512-MWvmLGVi2oW8uFUXz3mQnlGXXQ/R0ulb2oVpnhY7+mHsrrDOoVHYbjkNpYQkcvS+OznGCsnP4ny7edD/l0Lfkg==, tarball: https://npm.pkg.github.com/download/@monorise-team/config/0.0.1-dev.6/2815457c36be5c45da8aa5645d98720204da270c}
+  '@monorise-team/config@0.0.1-dev.7':
+    resolution: {integrity: sha512-1YfbBEZuC/AE7geN5+B4YGaUHaz1ByZVpGgGsBlKBtW+jHB2o9IR2FW1duktuGW0GIky8tu8p2DSvcL9xPfGng==, tarball: https://npm.pkg.github.com/download/@monorise-team/config/0.0.1-dev.7/0446d3bbcb65c0247e21e320a249cfbeb019fab6}
     peerDependencies:
       eslint: ^10.0.0
       typescript: ^6.0.0
 
-  '@monorise-team/permissions@0.0.1-dev.6':
-    resolution: {integrity: sha512-PbKVDvgLwIAdHtrMCpeDLsaulHF+HWyynaqYK0zuliPR47IwHiGIh8rFQEXXQOh0uOJKPcTJm5EBOry1sJOKsw==, tarball: https://npm.pkg.github.com/download/@monorise-team/permissions/0.0.1-dev.6/aa06054de0979c94ac97a3b938337497ceae0700}
+  '@monorise-team/permissions@0.0.1-dev.7':
+    resolution: {integrity: sha512-rqg9gu+OHvdMae/ulMTV1PLn6NgYZn2LPf8h2h2CqvGoFrzLIlk/YZLHkFohe26v8LD/3NdDCao+uLSdxdJExA==, tarball: https://npm.pkg.github.com/download/@monorise-team/permissions/0.0.1-dev.7/63f972523c25e698cf2213793862cd1bfd4ac494}
 
-  '@monorise-team/sdk@0.0.1-dev.6':
-    resolution: {integrity: sha512-V3F0wysYbJdRAkeYhuPYTM96PhUtwSNif/VH89jQ2N+t3Xc8Jk6FtWIiY2kyLF8kHVoJF3b4HWMBUkgRuniBVA==, tarball: https://npm.pkg.github.com/download/@monorise-team/sdk/0.0.1-dev.6/24009b32bff2c07de46fea454dc40a33f4076ba7}
+  '@monorise-team/sdk@0.0.1-dev.7':
+    resolution: {integrity: sha512-6B07+BIt1PceMNgXY51L7MN3cJ64OhxR+XeAAvvzHlp6a97Pr6r+8D0UOJxM3M1TOlv/EsNSkHuFsQItm+VgvA==, tarball: https://npm.pkg.github.com/download/@monorise-team/sdk/0.0.1-dev.7/4e090db9b8a9b4e6290c4417a449ad2127b1f8c2}
 
-  '@monorise-team/tokens@0.0.1-dev.6':
-    resolution: {integrity: sha512-56H/n28KVNbXRJjEsweTs52QZzPoGZv4GHhpRLANug5BBr0S4h2+woqrjLVxoQTEKDqTJJ3Ses2v9mJwrqvw8A==, tarball: https://npm.pkg.github.com/download/@monorise-team/tokens/0.0.1-dev.6/80e114ab5bd435d756db5615612c45ea789da7c5}
+  '@monorise-team/tokens@0.0.1-dev.7':
+    resolution: {integrity: sha512-+VwqAYhfsotHCcZAE1i0tUcfxqjiW8CSMDZ5fwNWzLOSKBDqwoe/yvP2v8G75//hpaMdRi/XGEccEazyvvfn1w==, tarball: https://npm.pkg.github.com/download/@monorise-team/tokens/0.0.1-dev.7/b5806d4ef8de06f95a18dea734b788d01ac496ef}
 
-  '@monorise-team/ui@0.0.1-dev.6':
-    resolution: {integrity: sha512-XFbXrjjfylRXOZQAfRMLCQ9QHVKTSAVPvcVCdpOKyGQviWVxWf+/S2b1whzNYw1bYoowSQrI2KpOOjoll9CaRA==, tarball: https://npm.pkg.github.com/download/@monorise-team/ui/0.0.1-dev.6/a9fdcc9bb72c95806183eaa9bb1c1c61165e7a79}
+  '@monorise-team/ui@0.0.1-dev.7':
+    resolution: {integrity: sha512-9LgK0ykrwUcB5spuKCC8vi4sQJBcP428MnPbfa9H/WybpNFCUfLvfQMRh4Uy4l0CB/cvMEUNuI0rkAiUccnm6A==, tarball: https://npm.pkg.github.com/download/@monorise-team/ui/0.0.1-dev.7/b6aed719e170fe8a1f333bcfce7643aa7139929e}
     peerDependencies:
       react: ^19.2.0
       react-dom: ^19.2.0
@@ -6467,14 +6467,14 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@monorise-team/auth@0.0.1-dev.6(fastify@5.12.8)':
+  '@monorise-team/auth@0.0.1-dev.7(fastify@5.12.8)':
     dependencies:
       fastify: 5.12.8
       fastify-plugin: 5.1.0
       jose: 6.2.18
       zod: 4.6.7
 
-  '@monorise-team/config@0.0.1-dev.6(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)':
+  '@monorise-team/config@0.0.1-dev.7(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
       '@commitlint/config-conventional': 21.2.4
       '@eslint/js': 10.0.1(eslint@10.15.0(jiti@2.7.0))
@@ -6487,17 +6487,17 @@ snapshots:
       - '@typescript/native'
       - supports-color
 
-  '@monorise-team/permissions@0.0.1-dev.6':
+  '@monorise-team/permissions@0.0.1-dev.7':
     dependencies:
       zod: 4.6.7
 
-  '@monorise-team/sdk@0.0.1-dev.6': {}
+  '@monorise-team/sdk@0.0.1-dev.7': {}
 
-  '@monorise-team/tokens@0.0.1-dev.6': {}
+  '@monorise-team/tokens@0.0.1-dev.7': {}
 
-  '@monorise-team/ui@0.0.1-dev.6(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.5)':
+  '@monorise-team/ui@0.0.1-dev.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.5)':
     dependencies:
-      '@monorise-team/tokens': 0.0.1-dev.6
+      '@monorise-team/tokens': 0.0.1-dev.7
       clsx: 2.1.1
       lucide-react: 1.77.0(@types/react@19.3.0)(react@19.3.1)
       radix-ui: 1.8.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
