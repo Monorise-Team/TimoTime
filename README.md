@@ -2,13 +2,13 @@
 
 Ewidencja czasu pracy Monorise w przeglądarce i na telefonie: start i stop pracy, przerwy, praca zdalna i wyjścia służbowe. Logowanie tylko kontem Monorise przez MonoriseCore (`@monorise-team/auth`), baza PostgreSQL z Prismą i RLS (ADR-0095, ADR-0096).
 
-| Część                                      | Co                                                                                           | Adres                                               |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| [`apps/web`](apps/web)                     | Next.js: strona produktu i API `/api/v1`, a pod drugim adresem aplikacja w przeglądarce      | `time.monorise.studio`, `timo-time.monorise.studio` |
-| [`apps/mobile`](apps/mobile)               | Expo (iOS, Android)                                                                          | iOS, Android                                        |
-| [`packages/contracts`](packages/contracts) | typy i schematy API, manifest uprawnień (`definePermissions`) i gotowe role produktu         |                                                     |
-| [`packages/client`](packages/client)       | typowany klient API dla przeglądarki i telefonu oraz zarządzanie sesją aplikacji mobilnej    |                                                     |
-| [`packages/db`](packages/db)               | baza `timo_time`: schemat Prisma, migracje z RLS, indeks jednego otwartego wpisu, `withUser` |                                                     |
+| Część                                      | Co                                                                                                             | Adres                                               |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [`apps/web`](apps/web)                     | Next.js: strona produktu i API `/api/v1`, a pod drugim adresem aplikacja w przeglądarce                        | `time.monorise.studio`, `timo-time.monorise.studio` |
+| [`apps/mobile`](apps/mobile)               | Expo (iOS, Android)                                                                                            | iOS, Android                                        |
+| [`packages/contracts`](packages/contracts) | typy i schematy API, manifest uprawnień (`definePermissions`) i gotowe role produktu                           |                                                     |
+| [`packages/client`](packages/client)       | typowany klient API dla przeglądarki i telefonu oraz zarządzanie sesją aplikacji mobilnej                      |                                                     |
+| [`packages/db`](packages/db)               | baza `timo_time`: schemat Prisma, migracje z RLS, indeks jednego otwartego wpisu, `withUser` i `withTeamScope` |                                                     |
 
 ## Uruchomienie lokalne
 
@@ -47,9 +47,52 @@ Logowanie na telefonie: przycisk „Zaloguj się kontem Monorise” otwiera ekra
 
 ### Baza danych
 
-PostgreSQL z Prismą (ADR-0096), lokalnie w Dockerze na porcie 5435. Serwer łączy się rolą `timo_time_app`, którą zawsze obowiązuje RLS: wpis czasu pracy widzi i zmienia tylko jego właściciel w swojej firmie (ADR-0037). Częściowy indeks unikalny na `ended_at IS NULL` gwarantuje w bazie najwyżej jeden otwarty wpis na osobę.
+PostgreSQL z Prismą (ADR-0096), lokalnie w Dockerze na porcie 5435. Serwer łączy się rolą `timo_time_app`, którą zawsze obowiązuje RLS: własne wpisy czasu pracy widzi i zmienia tylko ich właściciel w swojej firmie (`withUser`, polityka `owner_isolation`, ADR-0037), a widok kierownika rozszerza wyłącznie odczyt (`SELECT`) do pracowników w zakresie uprawnień kierownika tej samej firmy (`withTeamScope`, polityka `team_read_isolation`). Zapisy pozostają wyłącznie dla właściciela. Częściowy indeks unikalny na `ended_at IS NULL` gwarantuje w bazie najwyżej jeden otwarty wpis na osobę.
 
 Zmiana schematu: edytuj `packages/db/prisma/schema.prisma`, wygeneruj migrację w `packages/db` (`pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`) do nowego katalogu w `packages/db/prisma/migrations/` i dodaj polityki RLS dla nowych tabel z danymi osób lub firm.
+
+## Uprawnienia z MonoriseCore i widok kierownika
+
+### Jak serwer TimoTime sprawdza uprawnienia
+
+Serwer TimoTime pobiera w MonoriseCore token maszynowy OAuth 2.1 (`grant_type=client_credentials`, poufny klient `timotime-web`, zakresy `core:permissions.read core:directory.read`, pamięć podręczna do 30 sekund przed wygaśnięciem) i przez `@monorise-team/sdk` odczytuje migawkę uprawnień (`GET /core/v1/products/timotime/permission-snapshot`). Identyfikatory firmy (`org_id`), konta (`sub`) oraz wersja uprawnień (`authz_rev`) pochodzą wyłącznie ze zweryfikowanego tokenu lub sesji użytkownika.
+
+Migawki trzyma jedna pamięć podręczna `createPermissionCache` z `@monorise-team/permissions` (maksymalnie 5 minut, odświeżana od razu po wzroście `authz_rev` w tokenie). Sprawdzanie uprawnień odbywa się w jednym miejscu (`apps/web/src/server/permissions.ts`):
+
+- brak `"timotime"` w `snapshot.products` kończy się błędem `403 PERMISSION_DENIED` z czytelnym komunikatem dla użytkownika,
+- własne wpisy wymagają `timotime.entries.read_own` (odczyt) oraz `timotime.entries.write_own` (start i stop),
+- `GET /api/v1/me` (przeglądarka BFF) zwraca dodatkowo `capabilities: { trackOwnTime, viewTeam }`, na podstawie których interfejs pokazuje albo ukrywa zakładkę „Zespół”.
+
+### Czego potrzebuje osoba, aby korzystać z TimoTime
+
+1. **Dostęp firmy do produktu (`Entitlement`)**: firma musi mieć aktywny dostęp do produktu `timotime` w MonoriseCore.
+2. **Włączony dostęp do aplikacji (`AppAccess`)**: Owner firmy ma dostęp automatycznie, gdy firma ma `Entitlement`. Pozostałym pracownikom Owner (albo osoba z `core.app_access.manage`) włącza aplikację `timotime`.
+3. **Rola w TimoTime**: zwykły pracownik potrzebuje gotowej roli „Pracownik” (`timotime.employee`, uprawnienia `entries.read_own` i `entries.write_own`), a kierownik roli „Kierownik” (`timotime.manager`, z `timotime.entries.read`) nadanej w zakresie jednostki (`UNIT`) albo całej firmy (`ORGANIZATION`). Owner ma wszystkie uprawnienia produktu po włączeniu `Entitlement`.
+
+### Konfiguracja lokalna w MonoriseCore
+
+Po uruchomieniu MonoriseCore (`pnpm oauth:seed` i `pnpm dev` w MonoriseCore) oraz rejestracji uprawnień i szablonów ról TimoTime (`pnpm permissions:register` w TimoTime):
+
+```bash
+# 1. W MonoriseCore: przyznaj firmie dostęp do produktu timotime
+pnpm entitlement:grant -- --organization acme.test --product timotime
+```
+
+Następnie w Core API (`http://localhost:3200/core/v1`, z tokenem Ownera firmy):
+
+- włącz aplikację pracownikowi: `POST /core/v1/app-access` z `{ "accountId": "<uuid>", "product": "timotime" }`,
+- sprawdź identyfikatory gotowych ról TimoTime: `GET /core/v1/roles?product=timotime`,
+- nadaj rolę „Pracownik” albo „Kierownik” w wybranym zakresie (`ORGANIZATION` albo `UNIT`): `POST /core/v1/role-assignments`.
+
+### Widok kierownika (Zespół)
+
+Osoby z uprawnieniem `timotime.entries.read` (np. Kierownik oddziału albo Owner) widzą w przeglądarce zakładkę „Zespół” obok rejestracji własnego czasu pracy. Trasy `GET /api/v1/team/current` (kto teraz pracuje) oraz `GET /api/v1/team/entries?from&to` (wpisy z przedziału do 31 dni, w tym nocne) wyliczają zakres przez `scopeOf(snapshot, "timotime.entries.read")`:
+
+- `ORGANIZATION`: wszyscy pracownicy firmy,
+- `LIMITED`: pracownicy z rozwiniętego poddrzewa jednostek `scope.unitIds` pobierani z Core Directory (`listProductDirectoryUnitMembers` ze stronicowaniem `paginate`); nadania zakresu `RESOURCE` są na tym etapie pomijane,
+- `NONE`: odmowa `403 PERMISSION_DENIED`.
+
+Imiona i nazwiska potrzebnych pracowników serwer dociąga z Core Directory (`listProductDirectoryEmployees`, w paczkach po 100 identyfikatorów). Widok zespołu nie obejmuje jeszcze aplikacji mobilnej.
 
 ## Rejestracja uprawnień w MonoriseCore
 
