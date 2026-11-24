@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Paczki z zewnątrz instalujemy dopiero 3 dni po publikacji (ochrona łańcucha dostaw, ADR-0076).
+# Naszych @monorise-team/* to nie dotyczy (ADR-0087).
+minimumReleaseAge: 4320
+minimumReleaseAgeExclude:
+  - "@monorise-team/*"
+
+# Skrypty instalacyjne tylko dla zaufanych paczek (esbuild i Prisma pobierają swoje programy dla systemu).
+allowBuilds:
+  esbuild: true
+  prisma: true
+  "@prisma/engines": true

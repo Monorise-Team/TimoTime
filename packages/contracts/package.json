@@ -1,0 +1,31 @@
+{
+  "name": "@timotime/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Kontrakt API TimoTime: schematy, typy i manifest uprawnień wspólne dla serwera i aplikacji",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint --max-warnings=0 .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@monorise-team/permissions": "0.0.1-dev.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@monorise-team/config": "0.0.1-dev.6",
+    "eslint": "^10.15.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.1"
+  }
+}

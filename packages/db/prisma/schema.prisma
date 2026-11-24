@@ -1,0 +1,67 @@
+// Baza timo_time (ADR-0096): wpisy czasu pracy i sesje przeglądarki.
+// Osoba, pracownik i firma pochodzą z MonoriseCore (sub, employee_id i org_id z tokenu), więc TimoTime nie ma własnych kont.
+// Schemat "auth": sesje przeglądarki (BFF, @monorise-team/auth). Szukamy ich po skrócie identyfikatora z ciasteczka,
+// zanim wiadomo, czyja to sesja, więc są bez RLS; tokeny w środku są zaszyfrowane.
+// Schemat "public": wpisy czasu pracy z RLS po firmie i osobie (migracja). Aplikacja łączy się rolą timo_time_app
+// bez uprawnień właściciela tabel (ADR-0037).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "auth"]
+}
+
+/// Sesja przeglądarki: tokeny z Core zaszyfrowane po stronie serwera (ADR-0050).
+model Session {
+  /// SHA-256 identyfikatora z ciasteczka; samego identyfikatora baza nie zna.
+  id             String   @id
+  /// Konto Monorise (sub z tokenu Core).
+  accountId      String   @map("account_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)
+  /// Zaszyfrowane tokeny, kontekst firmy i dane osoby.
+  data           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([accountId])
+  @@index([expiresAt])
+  @@map("sessions")
+  @@schema("auth")
+}
+
+enum TimeEntryKind {
+  WORK
+  BREAK
+  REMOTE
+  BUSINESS_TRIP
+
+  @@map("time_entry_kind")
+  @@schema("public")
+}
+
+/// Wpis czasu pracy pracownika. Jedna osoba może mieć co najwyżej jeden otwarty wpis (indeks częściowy w migracji).
+model TimeEntry {
+  id             String        @id @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  /// Konto Monorise osoby (sub z tokenu Core).
+  accountId      String        @map("account_id") @db.Uuid
+  /// Pracownik w MonoriseCore (employee_id z tokenu Core).
+  employeeId     String        @map("employee_id") @db.Uuid
+  kind           TimeEntryKind
+  startedAt      DateTime      @map("started_at") @db.Timestamptz(3)
+  endedAt        DateTime?     @map("ended_at") @db.Timestamptz(3)
+  note           String?
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([organizationId, accountId, startedAt])
+  @@map("time_entries")
+  @@schema("public")
+}
