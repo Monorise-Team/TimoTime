@@ -10,6 +10,8 @@ import {
   type Me,
   type StartTimeEntryInput,
   type StopTimeEntryInput,
+  type TeamCurrentList,
+  type TeamTimeEntriesList,
   type TimeEntriesList,
   type TimeEntriesQuery,
   type TimeEntry,
@@ -93,15 +95,30 @@ export function createClient({ baseUrl = "", getToken, fetch: fetchImpl = fetch 
         return request<TimeEntriesList>("GET", `/time/entries${query ? `?${query}` : ""}`);
       },
     },
+    team: {
+      current: () => request<TeamCurrentList>("GET", "/team/current"),
+      entries: (range?: TimeEntriesQuery) => {
+        const params = new URLSearchParams();
+        if (range?.from) params.set("from", range.from);
+        if (range?.to) params.set("to", range.to);
+        const query = params.toString();
+        return request<TeamTimeEntriesList>("GET", `/team/entries${query ? `?${query}` : ""}`);
+      },
+    },
   };
 }
 
 export {
   TIME_ENTRY_KIND_LABELS,
   TIME_ENTRY_KINDS,
+  type Capabilities,
   type Me,
   type StartTimeEntryInput,
   type StopTimeEntryInput,
+  type TeamCurrentList,
+  type TeamEmployee,
+  type TeamTimeEntriesList,
+  type TeamTimeEntry,
   type TimeEntriesList,
   type TimeEntriesQuery,
   type TimeEntry,
