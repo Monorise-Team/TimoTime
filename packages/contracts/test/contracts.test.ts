@@ -1,13 +1,32 @@
-import { permissionManifestSchema } from "@monorise-team/permissions";
+import { permissionKeySchema, permissionManifestSchema } from "@monorise-team/permissions";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
   resolveEntriesRange,
   StartTimeEntryInput,
   TIME_ENTRY_KINDS,
   TIMOTIME_PERMISSION_MANIFEST,
   TIMOTIME_PERMISSIONS,
+  TIMOTIME_ROLE_TEMPLATES,
   TimeEntriesQuery,
 } from "../src/index.js";
+
+/** Minimalny schemat żądania `PUT /core/v1/products/{productKey}/role-templates` zgodny z MonoriseCore. */
+const CoreRoleTemplateKey = z.string().regex(/^[a-z][a-z0-9]*(\.[a-z][a-z0-9_]*)+$/);
+const CoreRoleTemplateEntry = z.object({
+  key: CoreRoleTemplateKey,
+  name: z.string().trim().min(1).max(120),
+  description: z.string().trim().min(1).max(500).nullable().optional(),
+  permissions: z
+    .array(permissionKeySchema)
+    .min(1)
+    .max(200)
+    .refine((keys) => new Set(keys).size === keys.length, "Zduplikowane klucze uprawnień w roli"),
+});
+const CoreRegisterRoleTemplatesRequest = z
+  .array(CoreRoleTemplateEntry)
+  .max(100)
+  .refine((entries) => new Set(entries.map((entry) => entry.key)).size === entries.length, "Zduplikowane klucze ról");
 
 describe("manifest uprawnień TimoTime", () => {
   it("spełnia schemat manifestu z @monorise-team/permissions", () => {
@@ -29,6 +48,52 @@ describe("manifest uprawnień TimoTime", () => {
       expect(entry.key.startsWith("timotime.")).toBe(true);
       expect(entry.description.length).toBeGreaterThan(10);
     }
+  });
+});
+
+describe("gotowe role (szablony) TimoTime", () => {
+  it("spełniają schemat żądania MonoriseCore i mają prefiks timotime.", () => {
+    const parsed = CoreRegisterRoleTemplatesRequest.parse(TIMOTIME_ROLE_TEMPLATES);
+    expect(parsed).toHaveLength(2);
+    for (const template of parsed) {
+      expect(template.key.startsWith("timotime.")).toBe(true);
+    }
+  });
+
+  it("odwołują się wyłącznie do uprawnień z manifestu TimoTime", () => {
+    const manifestKeys = new Set<string>(TIMOTIME_PERMISSION_MANIFEST.map((entry) => entry.key));
+    for (const template of TIMOTIME_ROLE_TEMPLATES) {
+      for (const permission of template.permissions) {
+        expect(manifestKeys.has(permission)).toBe(true);
+      }
+    }
+  });
+
+  it("definiują role Pracownik i Kierownik z oczekiwanym zakresem uprawnień", () => {
+    const byKey = new Map<string, (typeof TIMOTIME_ROLE_TEMPLATES)[number]>(
+      TIMOTIME_ROLE_TEMPLATES.map((template) => [template.key, template]),
+    );
+
+    expect(byKey.get("timotime.employee")).toEqual({
+      key: "timotime.employee",
+      name: "Pracownik",
+      description: "Rejestruje i przegląda własny czas pracy",
+      permissions: ["timotime.entries.read_own", "timotime.entries.write_own"],
+    });
+
+    expect(byKey.get("timotime.manager")).toEqual({
+      key: "timotime.manager",
+      name: "Kierownik",
+      description: "Przegląda i zatwierdza czas pracy, urlopy i raporty zespołu w swoim zakresie",
+      permissions: [
+        "timotime.entries.read_own",
+        "timotime.entries.write_own",
+        "timotime.entries.read",
+        "timotime.entries.approve",
+        "timotime.leave.approve",
+        "timotime.reports.export",
+      ],
+    });
   });
 });
 
