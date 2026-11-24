@@ -96,6 +96,9 @@ importers:
       '@monorise-team/auth':
         specifier: 0.0.1-dev.7
         version: 0.0.1-dev.7(fastify@5.12.8)
+      '@monorise-team/permissions':
+        specifier: 0.0.1-dev.7
+        version: 0.0.1-dev.7
       '@monorise-team/sdk':
         specifier: 0.0.1-dev.7
         version: 0.0.1-dev.7
