@@ -10,7 +10,8 @@
     "start": "next start --port 3300",
     "lint": "eslint --max-warnings=0 .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "permissions:register": "pnpm --filter @timotime/contracts build && node scripts/register-permissions.mjs"
   },
   "dependencies": {
     "@monorise-team/auth": "0.0.1-dev.6",
