@@ -13,9 +13,8 @@ import { join } from "node:path";
 const root = join(import.meta.dirname, "..");
 const coreSecretsFile =
   process.env.CORE_OAUTH_SECRETS_FILE ?? join(root, "../MonoriseCore/apps/auth/.data/oauth-clients.json");
-const coreSecret = existsSync(coreSecretsFile)
-  ? (JSON.parse(readFileSync(coreSecretsFile, "utf8"))["timotime-web"] ?? "")
-  : "";
+const hasCoreSecretsFile = existsSync(coreSecretsFile);
+const coreSecret = hasCoreSecretsFile ? (JSON.parse(readFileSync(coreSecretsFile, "utf8"))["timotime-web"] ?? "") : "";
 
 function ensure(file, header, values) {
   const path = join(root, file);
@@ -43,7 +42,14 @@ ensure("apps/web/.env.local", "# Tylko lokalnie. Nigdy nie commituj tego pliku."
 ensure("packages/db/.env", "# Tylko lokalnie: właściciel tabel, do migracji.", {
   DATABASE_URL: "postgresql://timo_time_owner:timo_time_owner@localhost:5435/timo_time",
 });
-if (!coreSecret) {
+if (!hasCoreSecretsFile) {
+  console.log(
+    `Nie znaleziono pliku sekretów OAuth Core: ${coreSecretsFile}\n` +
+      "Jeśli repozytorium (albo git worktree) nie leży obok MonoriseCore, wskaż plik przez CORE_OAUTH_SECRETS_FILE:\n" +
+      "  CORE_OAUTH_SECRETS_FILE=/sciezka/do/MonoriseCore/apps/auth/.data/oauth-clients.json pnpm setup:env\n" +
+      "Wcześniej uruchom `pnpm oauth:seed` w MonoriseCore (i usuń pusty TIMOTIME_OAUTH_CLIENT_SECRET z apps/web/.env.local).",
+  );
+} else if (!coreSecret) {
   console.log(
     "Brak sekretu klienta timotime-web: uruchom `pnpm oauth:seed` w MonoriseCore, potem jeszcze raz `pnpm setup:env`\n" +
       "(albo usuń pusty wpis TIMOTIME_OAUTH_CLIENT_SECRET z apps/web/.env.local, żeby skrypt mógł go dopisać).",

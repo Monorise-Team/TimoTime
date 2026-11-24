@@ -29,15 +29,21 @@ pnpm db:migrate         # migracje bazy timo_time i bazy testów timo_time_test
 pnpm dev                # http://time.localhost:3300 (strona i API) i http://timo-time.localhost:3300 (aplikacja)
 ```
 
+Jeśli repozytorium albo git worktree nie leży obok katalogu `MonoriseCore`, wskaż plik z sekretami OAuth Core przez zmienną `CORE_OAUTH_SECRETS_FILE`, na przykład:
+
+```bash
+CORE_OAUTH_SECRETS_FILE=/sciezka/do/MonoriseCore/apps/auth/.data/oauth-clients.json pnpm setup:env
+```
+
 Logowanie: TimoTime korzysta z kont Monorise, więc obok musi działać MonoriseCore (`pnpm dev` w MonoriseCore: logowanie na `localhost:3100`, Core API na `localhost:3200`). Przycisk „Zaloguj się kontem Monorise” przekierowuje na ekran logowania Core i wraca do aplikacji z sesją BFF w ciasteczku `HttpOnly`.
 
 ### Aplikacja na telefon
 
 ```bash
-pnpm dev:mobile         # Expo; adres serwera: EXPO_PUBLIC_TIMOTIME_API (symulator iOS: http://127.0.0.1:3300)
+pnpm dev:mobile         # Expo; adresy: EXPO_PUBLIC_TIMOTIME_API (domyślnie http://127.0.0.1:3300) i EXPO_PUBLIC_CORE_API_URL (http://localhost:3200)
 ```
 
-Logowanie na telefonie: przycisk „Zaloguj się kontem Monorise” otwiera ekran logowania Core w przeglądarce systemowej (PKCE, klient `timotime-mobile`). Powrót działa przez `timotime://oauth/callback` (w Expo Go przez `exp://127.0.0.1:8081/--/oauth/callback`, dlatego Metro startuje z `--localhost`; w lokalnym `oauth-seed.ts` Core adres Expo Go musi być dodany do `timotime-mobile`). Tokeny trafiają do systemowego sejfu (`expo-secure-store`).
+Logowanie na telefonie: przycisk „Zaloguj się kontem Monorise” otwiera ekran logowania Core w przeglądarce systemowej (PKCE, klient `timotime-mobile`) z prośbą o dostęp do obu zasobów (API TimoTime i Core API). Powrót działa przez `timotime://oauth/callback` (w Expo Go przez `exp://127.0.0.1:8081/--/oauth/callback`, dlatego Metro startuje z `--localhost`). Tokeny trafiają do systemowego sejfu (`expo-secure-store`), a dane osoby i firmy aplikacja pobiera bezpośrednio z Core API przez `@monorise-team/sdk` osobnym tokenem Core API.
 
 ### Baza danych
 
