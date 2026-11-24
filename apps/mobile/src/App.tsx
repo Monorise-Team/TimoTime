@@ -1,9 +1,9 @@
+import { createCoreClient, type Me as CoreMe } from "@monorise-team/sdk";
 import {
   ApiError,
   createAppSession,
   createClient,
   TIME_ENTRY_KIND_LABELS,
-  type Me,
   type TimeEntry,
   type TimeEntryKind,
 } from "@timotime/client";
@@ -12,7 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { mobileSignIn } from "./auth";
+import { CORE_API, mobileSignIn } from "./auth";
 import { secureStore } from "./session";
 import { colors, gap, radius } from "./theme";
 
@@ -47,23 +47,45 @@ const formatClock = (iso: string): string => {
   return `${hh}:${mm}`;
 };
 
-const todayRange = () => {
-  const now = new Date();
+const localDayBounds = (nowMs: number) => {
+  const now = new Date(nowMs);
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const nextStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  return { from: start.toISOString(), to: end.toISOString() };
+  return {
+    startMs: start.getTime(),
+    nextStartMs: nextStart.getTime(),
+    from: start.toISOString(),
+    to: end.toISOString(),
+  };
+};
+
+/** Część czasu trwania wpisu przypadająca na podany lokalny dzień (podział o północy). */
+const durationWithinDayMs = (entry: TimeEntry, nowMs: number, dayStartMs: number, nextDayStartMs: number): number => {
+  const start = Math.max(new Date(entry.startedAt).getTime(), dayStartMs);
+  const end = Math.min(entry.endedAt ? new Date(entry.endedAt).getTime() : nowMs, nextDayStartMs);
+  return Math.max(0, end - start);
 };
 
 const formatError = (error: unknown) =>
   error instanceof ApiError ? error.message : "Brak połączenia z serwerem TimoTime. Sprawdź adres i sieć.";
 
+const profileHeader = (me: CoreMe): string => {
+  const fullName = `${me.employee.firstName} ${me.employee.lastName}`.trim() || me.account.email;
+  return `${fullName} · ${me.organization.name}`;
+};
+
 /**
- * TimoTime na telefonie: logowanie kontem Monorise (PKCE), bieżący status, przyciski start/przerwa/stop
- * i lista dzisiejszych wpisów. Ten sam serwer i klient API co w przeglądarce.
+ * TimoTime na telefonie: logowanie kontem Monorise (PKCE), profil bezpośrednio z Core API (`@monorise-team/sdk`),
+ * bieżący status, przyciski start/przerwa/stop i lista dzisiejszych wpisów.
  */
 export function App() {
   const session = useMemo(() => createAppSession(mobileSignIn, secureStore), []);
   const client = useMemo(() => createClient({ baseUrl: apiUrl, getToken: () => session.accessToken() }), [session]);
+  const coreClient = useMemo(
+    () => createCoreClient({ baseUrl: CORE_API, getAccessToken: () => session.accessToken(CORE_API) }),
+    [session],
+  );
   const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
@@ -80,7 +102,7 @@ export function App() {
             <ActivityIndicator color={colors.accent} />
           </Centered>
         ) : signedIn ? (
-          <Tracker client={client} onSignOut={() => void session.signOut()} />
+          <Tracker client={client} coreClient={coreClient} onSignOut={() => void session.signOut()} />
         ) : (
           <SignIn onSignIn={session.signIn} />
         )}
@@ -126,8 +148,16 @@ function SignIn({ onSignIn }: { onSignIn: () => Promise<void> }) {
   );
 }
 
-function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient>; onSignOut: () => void }) {
-  const [me, setMe] = useState<Me | null>(null);
+function Tracker({
+  client,
+  coreClient,
+  onSignOut,
+}: {
+  client: ReturnType<typeof createClient>;
+  coreClient: ReturnType<typeof createCoreClient>;
+  onSignOut: () => void;
+}) {
+  const [me, setMe] = useState<CoreMe | null>(null);
   const [current, setCurrent] = useState<TimeEntry | null>(null);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +166,8 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const fetchTrackerData = useCallback(async () => {
-    const [active, list] = await Promise.all([client.time.current(), client.time.entries(todayRange())]);
+    const { from, to } = localDayBounds(readClock());
+    const [active, list] = await Promise.all([client.time.current(), client.time.entries({ from, to })]);
     return { active, entries: list.entries };
   }, [client]);
 
@@ -147,33 +178,23 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
       setCurrent(data.active);
       setEntries(data.entries);
       setNowMs(readClock());
-      // Dane osoby z Core API (opcjonalne, gdyby token telefonu był wydany tylko dla API TimoTime).
-      void client.session
-        .me()
-        .then(setMe)
-        .catch(() => undefined);
     } catch (e) {
       setError(formatError(e));
     } finally {
       setLoading(false);
     }
-  }, [client, fetchTrackerData]);
+  }, [fetchTrackerData]);
 
   useEffect(() => {
     let cancelled = false;
-    fetchTrackerData().then(
-      (data) => {
+    Promise.all([fetchTrackerData(), coreClient.getMe().catch(() => null)]).then(
+      ([data, profile]) => {
         if (cancelled) return;
         setCurrent(data.active);
         setEntries(data.entries);
+        if (profile) setMe(profile);
         setNowMs(readClock());
         setLoading(false);
-        void client.session
-          .me()
-          .then((profile) => {
-            if (!cancelled) setMe(profile);
-          })
-          .catch(() => undefined);
       },
       (e: unknown) => {
         if (cancelled) return;
@@ -184,7 +205,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
     return () => {
       cancelled = true;
     };
-  }, [client, fetchTrackerData]);
+  }, [coreClient, fetchTrackerData]);
 
   useEffect(() => {
     if (!current) return;
@@ -220,10 +241,10 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
     }
   }
 
+  const { startMs: dayStartMs, nextStartMs: nextDayStartMs } = localDayBounds(nowMs);
   const todayWorkMs = entries.reduce((sum, entry) => {
     if (entry.kind === "BREAK") return sum;
-    const end = entry.endedAt ? new Date(entry.endedAt).getTime() : nowMs;
-    return sum + Math.max(0, end - new Date(entry.startedAt).getTime());
+    return sum + durationWithinDayMs(entry, nowMs, dayStartMs, nextDayStartMs);
   }, 0);
 
   return (
@@ -231,11 +252,7 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
       <View style={styles.header}>
         <View>
           <Text style={styles.brand}>TIMOTIME</Text>
-          {me ? (
-            <Text style={styles.muted}>
-              {me.employee.fullName} · {me.organization.name}
-            </Text>
-          ) : null}
+          {me ? <Text style={styles.muted}>{profileHeader(me)}</Text> : null}
         </View>
         <Pressable onPress={onSignOut} accessibilityRole="button">
           <Text style={styles.muted}>Wyloguj</Text>
@@ -305,14 +322,15 @@ function Tracker({ client, onSignOut }: { client: ReturnType<typeof createClient
             </View>
           }
           renderItem={({ item }) => {
-            const end = item.endedAt ? new Date(item.endedAt).getTime() : nowMs;
-            const duration = Math.max(0, end - new Date(item.startedAt).getTime());
+            const startedBeforeToday = new Date(item.startedAt).getTime() < dayStartMs;
+            const duration = durationWithinDayMs(item, nowMs, dayStartMs, nextDayStartMs);
             return (
               <View style={[styles.row, styles.rowInline]}>
                 <View>
                   <Text style={styles.rowTitle}>{TIME_ENTRY_KIND_LABELS[item.kind]}</Text>
                   <Text style={styles.muted}>
-                    {formatClock(item.startedAt)} do {item.endedAt ? formatClock(item.endedAt) : "teraz"}
+                    {startedBeforeToday ? "00:00" : formatClock(item.startedAt)} do{" "}
+                    {item.endedAt ? formatClock(item.endedAt) : "teraz"}
                   </Text>
                 </View>
                 <Text style={styles.rowTitle}>{formatDuration(duration)}</Text>

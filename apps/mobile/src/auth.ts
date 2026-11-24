@@ -2,9 +2,11 @@ import { SessionExpiredError, type AppTokens, type SignInProvider } from "@timot
 import * as AuthSession from "expo-auth-session";
 import Constants from "expo-constants";
 
-const extra = Constants.expoConfig?.extra as { apiResource?: string; coreAuthUrl?: string } | undefined;
+const extra = Constants.expoConfig?.extra as
+  { apiResource?: string; coreAuthUrl?: string; coreApiUrl?: string } | undefined;
 const CORE = extra?.coreAuthUrl ?? "http://localhost:3100";
 const RESOURCE = extra?.apiResource ?? "http://time.localhost:3300";
+export const CORE_API = extra?.coreApiUrl ?? "http://localhost:3200";
 const CLIENT_ID = "timotime-mobile";
 const SCOPES = ["openid", "profile", "email", "offline_access"];
 
@@ -27,6 +29,8 @@ function toTokens(response: AuthSession.TokenResponse, previousRefreshToken?: st
 /**
  * Logowanie kontem Monorise na telefonie (RFC 8252): ekran logowania Core w przeglądarce systemowej
  * (ASWebAuthenticationSession, Custom Tabs), powrót do aplikacji, wymiana kodu z PKCE. Expo sprawdza `state`.
+ * Żądanie autoryzacji prosi o oba zasoby (API TimoTime i Core API), żeby telefon mógł pobierać token Core API
+ * przez refresh grant bez przekazywania tokenu TimoTime do Core.
  */
 export const mobileSignIn: SignInProvider = {
   async signIn() {
@@ -37,7 +41,10 @@ export const mobileSignIn: SignInProvider = {
       usePKCE: true,
       extraParams: { resource: RESOURCE },
     });
-    const result = await request.promptAsync(discovery);
+    // expo-auth-session nie pozwala powtórzyć parametru resource w extraParams, więc doklejamy Core API do URL.
+    const baseUrl = await request.makeAuthUrlAsync(discovery);
+    const url = `${baseUrl}&resource=${encodeURIComponent(CORE_API)}`;
+    const result = await request.promptAsync(discovery, { url });
     if (result.type === "cancel" || result.type === "dismiss") throw new Error("Logowanie zostało przerwane.");
     if (result.type !== "success") throw new Error("Nie udało się zalogować.");
     // RFC 9207: odpowiedź musi pochodzić od Core
@@ -54,10 +61,10 @@ export const mobileSignIn: SignInProvider = {
     return toTokens(response);
   },
 
-  async refresh(refreshToken) {
+  async refresh(refreshToken, resource = RESOURCE) {
     try {
       const response = await AuthSession.refreshAsync(
-        { clientId: CLIENT_ID, refreshToken, extraParams: { resource: RESOURCE } },
+        { clientId: CLIENT_ID, refreshToken, extraParams: { resource } },
         discovery,
       );
       return toTokens(response, refreshToken);

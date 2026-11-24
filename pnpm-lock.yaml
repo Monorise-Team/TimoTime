@@ -35,6 +35,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@monorise-team/sdk':
+        specifier: 0.0.1-dev.6
+        version: 0.0.1-dev.6
       '@monorise-team/tokens':
         specifier: 0.0.1-dev.6
         version: 0.0.1-dev.6

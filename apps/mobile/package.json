@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@monorise-team/sdk": "0.0.1-dev.6",
     "@monorise-team/tokens": "0.0.1-dev.6",
     "@timotime/client": "workspace:*",
     "expo": "~58.0.26",

@@ -31,6 +31,8 @@ const config: ExpoConfig = {
     apiResource: process.env.EXPO_PUBLIC_TIMOTIME_API_RESOURCE ?? "http://time.localhost:3300",
     /** Serwer logowania MonoriseCore. */
     coreAuthUrl: process.env.EXPO_PUBLIC_CORE_AUTH_URL ?? "http://localhost:3100",
+    /** Core API (dane osoby i firmy); na produkcji https://api.monorise.studio. */
+    coreApiUrl: process.env.EXPO_PUBLIC_CORE_API_URL ?? "http://localhost:3200",
   },
 };
 
