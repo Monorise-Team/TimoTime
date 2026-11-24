@@ -52,4 +52,30 @@ describe("klient API TimoTime", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ code: "CONFLICT", status: 409 });
   });
+
+  it("pobiera bieżący status i wpisy zespołu", async () => {
+    const seenCurrent: { url?: string; init?: RequestInit } = {};
+    const currentClient = createClient({
+      baseUrl: "https://time.monorise.studio",
+      fetch: fakeFetch(200, { data: { entries: [] }, meta: {}, error: null }, seenCurrent),
+    });
+    expect(await currentClient.team.current()).toEqual({ entries: [] });
+    expect(seenCurrent.url).toBe("https://time.monorise.studio/api/v1/team/current");
+
+    const seenEntries: { url?: string; init?: RequestInit } = {};
+    const entriesClient = createClient({
+      baseUrl: "https://time.monorise.studio",
+      fetch: fakeFetch(
+        200,
+        {
+          data: { entries: [], from: "2026-11-24T00:00:00.000Z", to: "2026-11-24T23:59:59.999Z" },
+          meta: {},
+          error: null,
+        },
+        seenEntries,
+      ),
+    });
+    expect((await entriesClient.team.entries({ from: "2026-11-24", to: "2026-11-24" })).entries).toEqual([]);
+    expect(seenEntries.url).toBe("https://time.monorise.studio/api/v1/team/entries?from=2026-11-24&to=2026-11-24");
+  });
 });

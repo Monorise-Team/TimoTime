@@ -75,15 +75,15 @@ Ewidencja czasu pracy Monorise w przeglądarce i na telefonie (ADR-0095). Logowa
 | `apps/mobile`        | Expo (iOS, Android); własne ekrany, tokeny z `@monorise-team/tokens`, tokeny w `expo-secure-store`                                         |
 | `packages/contracts` | schematy zod, typy API, manifest uprawnień (`definePermissions`) i gotowe role (`TIMOTIME_ROLE_TEMPLATES`)                                 |
 | `packages/client`    | typowany klient API (ciasteczko w przeglądarce, token na telefonie) i `createAppSession`                                                   |
-| `packages/db`        | baza `timo_time`: schemat Prisma, migracje z RLS i indeksem jednego otwartego wpisu, `withUser`                                            |
+| `packages/db`        | baza `timo_time`: schemat Prisma, migracje z RLS i indeksem jednego otwartego wpisu, `withUser` i `withTeamScope`                          |
 
 ## Zasady kodu
 
 1. **Osoba, pracownik i firma tylko z tokenu albo sesji** (`requireUser` w `apps/web/src/server/auth.ts`), nigdy z treści żądania ani adresu (ADR-0037). TimoTime nie ma własnych kont.
-2. **Dane osób i firm tylko przez `withUser`** z `@timotime/db`: ustawia `app.organization_id` i `app.account_id` w transakcji, a RLS w bazie odcina resztę. Każda nowa tabela z danymi osób albo firm dostaje w migracji RLS (`ENABLE` + `FORCE`) i test izolacji.
-3. **API** w formacie `{ data, meta, error }` ze stałymi kodami błędów (`packages/contracts`); każda trasa przez `route()` z `apps/web/src/server/api.ts` (CSRF dla ciasteczka, CORS, mapowanie błędów zod, `@monorise-team/auth` i `@monorise-team/sdk`).
-4. **Komunikacja z MonoriseCore tylko przez `@monorise-team/sdk`** (`apps/web/src/server/core.ts`), bez ręcznego `fetch` do Core API (wyjątek: rejestracja uprawnień i ról w `apps/web/src/server/core-registration.ts`, dopóki te endpointy nie trafią do SDK).
-5. **Uprawnienia i gotowe role deklarowane w kodzie** w `packages/contracts/src/permissions.ts` (`definePermissions("timotime", ...)` i `TIMOTIME_ROLE_TEMPLATES`), rejestrowane w Core przez `pnpm permissions:register`. Sprawdzanie w jednym miejscu w `apps/web/src/server/permissions.ts` (gotowe na `can()` z `@monorise-team/permissions` po wdrożeniu migawek w Core).
+2. **Dane osób i firm tylko przez `withUser` i `withTeamScope`** z `@timotime/db`: `withUser` ustawia `app.organization_id` i `app.account_id` (własne wpisy, odczyt i zapis), a `withTeamScope` dodaje zakres odczytu zespołu (`app.team_scope` / `app.team_employee_ids`, tylko `SELECT`; zapisy nadal wyłącznie dla właściciela). Każda nowa tabela z danymi osób albo firm dostaje w migracji RLS (`ENABLE` + `FORCE`) i test izolacji.
+3. **API** w formacie `{ data, meta, error }` ze stałymi kodami błędów (`packages/contracts`); każda trasa przez `route()` z `apps/web/src/server/api.ts` (CSRF dla ciasteczka, CORS, mapowanie błędów zod, `@monorise-team/auth`, `@monorise-team/permissions` i `@monorise-team/sdk`).
+4. **Komunikacja z MonoriseCore tylko przez `@monorise-team/sdk`** (`apps/web/src/server/core.ts`, w tym klient maszynowy z tokenem z `apps/web/src/server/core-machine.ts`), bez ręcznego `fetch` do Core API (wyjątek: rejestracja uprawnień i ról w `apps/web/src/server/core-registration.ts`).
+5. **Uprawnienia i gotowe role deklarowane w kodzie** w `packages/contracts/src/permissions.ts` (`definePermissions("timotime", ...)` i `TIMOTIME_ROLE_TEMPLATES`), rejestrowane w Core przez `pnpm permissions:register`. Sprawdzanie wyłącznie w `apps/web/src/server/permissions.ts` przez `createPermissionCache`, `can()` i `scopeOf()` z `@monorise-team/permissions` na migawce z Core (`authz_rev` z tokenu).
 6. **Wygląd** tylko z `@monorise-team/ui` i tokenów `@monorise-team/tokens` (ADR-0091), bez kolorów wpisywanych na sztywno.
 7. **Jedna wersja**: po zmianie zależności `@monorise-team/*` używaj `pnpm shared:update`; `pnpm check:versions` musi przechodzić.
 8. **Teksty interfejsu** po polsku, bez półpauz i myślników jako separatorów zdań.

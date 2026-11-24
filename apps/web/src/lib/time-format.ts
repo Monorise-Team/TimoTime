@@ -1,4 +1,4 @@
-import type { TimeEntry } from "@timotime/contracts";
+import type { TeamEmployee, TeamTimeEntry, TimeEntry } from "@timotime/contracts";
 
 /** Formatuje czas trwania w milisekundach jako czytelny tekst po polsku (np. „2 godz. 15 min”). */
 export function formatDuration(ms: number): string {
@@ -137,4 +137,80 @@ export function groupEntriesByDay(
   }
 
   return [...map.values()].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+}
+
+export interface TeamEntrySlice {
+  entry: TeamTimeEntry;
+  durationMs: number;
+  startedBeforeRange: boolean;
+  endedAfterRange: boolean;
+}
+
+export interface TeamEmployeeGroup {
+  employee: TeamEmployee;
+  fullName: string;
+  entries: TeamEntrySlice[];
+  workMs: number;
+  breakMs: number;
+}
+
+/**
+ * Grupuje wpisy zespołu według pracownika w podanym przedziale czasu (np. dzisiejszym dniu lokalnym),
+ * przycinając wpisy nocne do granic przedziału i licząc sumy pracy oraz przerw dla każdej osoby.
+ */
+export function groupTeamEntriesByEmployee(
+  entries: readonly TeamTimeEntry[],
+  nowMs: number,
+  range: { from: string; to: string },
+): TeamEmployeeGroup[] {
+  const rangeFromMs = new Date(range.from).getTime();
+  const rangeToMs = new Date(range.to).getTime();
+  const map = new Map<string, TeamEmployeeGroup>();
+
+  for (const entry of entries) {
+    const entryStart = new Date(entry.startedAt).getTime();
+    const entryEnd = entry.endedAt ? new Date(entry.endedAt).getTime() : Math.max(nowMs, entryStart);
+    const effectiveEnd = Math.max(entryStart, entryEnd);
+
+    const clampedStart = Math.max(entryStart, rangeFromMs);
+    const clampedEnd = Math.min(effectiveEnd, rangeToMs);
+    if (clampedEnd < clampedStart) continue;
+
+    // Pomijaj pusty styk na początku dnia, gdy wpis zakończył się równo o 00:00:00.000
+    const endedAtBoundary = clampedStart === rangeFromMs && clampedEnd === rangeFromMs && entryStart < rangeFromMs;
+    if (endedAtBoundary) continue;
+
+    const durationMs = Math.max(0, clampedEnd - clampedStart);
+    let group = map.get(entry.employee.id);
+    if (!group) {
+      const fullName = `${entry.employee.firstName} ${entry.employee.lastName}`.trim();
+      group = {
+        employee: entry.employee,
+        fullName: fullName || entry.employee.id,
+        entries: [],
+        workMs: 0,
+        breakMs: 0,
+      };
+      map.set(entry.employee.id, group);
+    }
+
+    group.entries.push({
+      entry,
+      durationMs,
+      startedBeforeRange: entryStart < rangeFromMs,
+      endedAfterRange: effectiveEnd > rangeToMs,
+    });
+    if (entry.kind === "BREAK") group.breakMs += durationMs;
+    else group.workMs += durationMs;
+  }
+
+  for (const group of map.values()) {
+    group.entries.sort((a, b) => Date.parse(b.entry.startedAt) - Date.parse(a.entry.startedAt));
+  }
+
+  return [...map.values()].sort((a, b) => {
+    const byLast = a.employee.lastName.localeCompare(b.employee.lastName, "pl");
+    if (byLast !== 0) return byLast;
+    return a.employee.firstName.localeCompare(b.employee.firstName, "pl");
+  });
 }

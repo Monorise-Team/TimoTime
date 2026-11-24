@@ -33,6 +33,12 @@ export interface ApiResponse<T> {
 
 // ── Zalogowana osoba i firma (z MonoriseCore) ───────────────────────────────
 
+export const Capabilities = z.object({
+  trackOwnTime: z.boolean(),
+  viewTeam: z.boolean(),
+});
+export type Capabilities = z.infer<typeof Capabilities>;
+
 export const Me = z.object({
   account: z.object({
     id: z.string(),
@@ -49,6 +55,7 @@ export const Me = z.object({
     id: z.string(),
     name: z.string(),
   }),
+  capabilities: Capabilities,
 });
 export type Me = z.infer<typeof Me>;
 
@@ -165,5 +172,31 @@ export const TimeEntriesList = z.object({
   to: z.string(),
 });
 export type TimeEntriesList = z.infer<typeof TimeEntriesList>;
+
+// ── Widok zespołu (kierownik) ───────────────────────────────────────────────
+
+export const TeamEmployee = z.object({
+  id: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+});
+export type TeamEmployee = z.infer<typeof TeamEmployee>;
+
+export const TeamTimeEntry = TimeEntry.extend({
+  employee: TeamEmployee,
+});
+export type TeamTimeEntry = z.infer<typeof TeamTimeEntry>;
+
+export const TeamCurrentList = z.object({
+  entries: z.array(TeamTimeEntry),
+});
+export type TeamCurrentList = z.infer<typeof TeamCurrentList>;
+
+export const TeamTimeEntriesList = z.object({
+  entries: z.array(TeamTimeEntry),
+  from: z.string(),
+  to: z.string(),
+});
+export type TeamTimeEntriesList = z.infer<typeof TeamTimeEntriesList>;
 
 export * from "./permissions.js";

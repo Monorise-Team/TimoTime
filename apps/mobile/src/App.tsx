@@ -163,6 +163,7 @@ function Tracker({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const fetchTrackerData = useCallback(async () => {
@@ -173,13 +174,18 @@ function Tracker({
 
   const load = useCallback(async () => {
     setError(null);
+    setAccessDeniedMessage(null);
     try {
       const data = await fetchTrackerData();
       setCurrent(data.active);
       setEntries(data.entries);
       setNowMs(readClock());
     } catch (e) {
-      setError(formatError(e));
+      if (e instanceof ApiError && e.status === 403) {
+        setAccessDeniedMessage(e.message);
+      } else {
+        setError(formatError(e));
+      }
     } finally {
       setLoading(false);
     }
@@ -187,18 +193,29 @@ function Tracker({
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchTrackerData(), coreClient.getMe().catch(() => null)]).then(
-      ([data, profile]) => {
+    void coreClient
+      .getMe()
+      .then((profile) => {
+        if (!cancelled) setMe(profile);
+      })
+      .catch(() => null);
+
+    fetchTrackerData().then(
+      (data) => {
         if (cancelled) return;
         setCurrent(data.active);
         setEntries(data.entries);
-        if (profile) setMe(profile);
+        setAccessDeniedMessage(null);
         setNowMs(readClock());
         setLoading(false);
       },
       (e: unknown) => {
         if (cancelled) return;
-        setError(formatError(e));
+        if (e instanceof ApiError && e.status === 403) {
+          setAccessDeniedMessage(e.message);
+        } else {
+          setError(formatError(e));
+        }
         setLoading(false);
       },
     );
@@ -221,7 +238,11 @@ function Tracker({
       setNowMs(readClock());
       await load();
     } catch (e) {
-      setError(formatError(e));
+      if (e instanceof ApiError && e.status === 403) {
+        setAccessDeniedMessage(e.message);
+      } else {
+        setError(formatError(e));
+      }
     } finally {
       setBusy(false);
     }
@@ -235,7 +256,11 @@ function Tracker({
       setNowMs(readClock());
       await load();
     } catch (e) {
-      setError(formatError(e));
+      if (e instanceof ApiError && e.status === 403) {
+        setAccessDeniedMessage(e.message);
+      } else {
+        setError(formatError(e));
+      }
     } finally {
       setBusy(false);
     }
@@ -263,6 +288,21 @@ function Tracker({
         <Centered>
           <ActivityIndicator color={colors.accent} />
         </Centered>
+      ) : accessDeniedMessage ? (
+        <View style={[styles.card, styles.accessDenied]}>
+          <Text style={styles.title}>Brak dostępu do TimoTime</Text>
+          <Text style={styles.muted}>{accessDeniedMessage}</Text>
+          <Pressable
+            style={styles.primary}
+            onPress={() => {
+              setLoading(true);
+              void load();
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.primaryText}>Spróbuj ponownie</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           data={entries}
@@ -362,6 +402,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
   },
   signIn: { margin: 16, marginTop: 80, padding: 20, gap: 12 },
+  accessDenied: { margin: 16, marginTop: 32, padding: 20, gap: 12 },
   statusCard: { padding: 16, gap: 8 },
   section: { gap: 12, marginBottom: 8 },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },

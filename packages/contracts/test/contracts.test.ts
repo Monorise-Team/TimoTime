@@ -2,8 +2,11 @@ import { permissionKeySchema, permissionManifestSchema } from "@monorise-team/pe
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  Me,
   resolveEntriesRange,
   StartTimeEntryInput,
+  TeamCurrentList,
+  TeamTimeEntriesList,
   TIME_ENTRY_KINDS,
   TIMOTIME_PERMISSION_MANIFEST,
   TIMOTIME_PERMISSIONS,
@@ -123,5 +126,37 @@ describe("schematy czasu pracy", () => {
     expect(TimeEntriesQuery.safeParse({ from: "2026-11-24", to: "2026-11-20" }).success).toBe(false);
     expect(TimeEntriesQuery.safeParse({ from: "2026-02-31", to: "2026-03-01" }).success).toBe(false);
     expect(TimeEntriesQuery.safeParse({ from: "nie-data" }).success).toBe(false);
+  });
+
+  it("waliduje capabilities w Me oraz listy wpisów zespołu z pracownikiem", () => {
+    const meParsed = Me.parse({
+      account: { id: "acc-1", email: "jan@acme.test" },
+      employee: { id: "emp-1", firstName: "Jan", lastName: "Nowak", fullName: "Jan Nowak", jobTitle: null },
+      organization: { id: "org-1", name: "Acme" },
+      capabilities: { trackOwnTime: true, viewTeam: true },
+    });
+    expect(meParsed.capabilities).toEqual({ trackOwnTime: true, viewTeam: true });
+
+    const teamEntry = {
+      id: "entry-1",
+      organizationId: "org-1",
+      accountId: "acc-2",
+      employeeId: "emp-2",
+      kind: "WORK",
+      startedAt: "2026-11-24T08:00:00.000Z",
+      endedAt: null,
+      note: null,
+      createdAt: "2026-11-24T08:00:00.000Z",
+      updatedAt: "2026-11-24T08:00:00.000Z",
+      employee: { id: "emp-2", firstName: "Anna", lastName: "Nowak" },
+    };
+    expect(TeamCurrentList.parse({ entries: [teamEntry] }).entries).toHaveLength(1);
+    expect(
+      TeamTimeEntriesList.parse({
+        entries: [teamEntry],
+        from: "2026-11-24T00:00:00.000Z",
+        to: "2026-11-24T23:59:59.999Z",
+      }).entries[0]?.employee.firstName,
+    ).toBe("Anna");
   });
 });
