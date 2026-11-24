@@ -16,7 +16,7 @@ import { assertTimePermission } from "./permissions";
 
 const OPEN_ENTRY_INDEX = "time_entries_one_open_per_account_idx";
 
-function serialize(row: TimeEntryRow): TimeEntry {
+export function serializeTimeEntry(row: TimeEntryRow): TimeEntry {
   return {
     id: row.id,
     organizationId: row.organizationId,
@@ -75,11 +75,11 @@ export function isOpenEntryConflict(error: unknown): boolean {
 
 /** Otwarty wpis czasu pracy zalogowanej osoby albo `null`. */
 export async function getCurrentTimeEntry(caller: Caller): Promise<TimeEntry | null> {
-  assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.read_own"]);
+  await assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.read_own"]);
   const row = await withUser(getDb(), caller, (tx) =>
     tx.timeEntry.findFirst({ where: { endedAt: null }, orderBy: { startedAt: "desc" } }),
   );
-  return row ? serialize(row) : null;
+  return row ? serializeTimeEntry(row) : null;
 }
 
 /**
@@ -88,7 +88,7 @@ export async function getCurrentTimeEntry(caller: Caller): Promise<TimeEntry | n
  * trafia w indeks `time_entries_one_open_per_account_idx` i kończy się błędem 409 CONFLICT.
  */
 export async function startTimeEntry(caller: Caller, input: StartTimeEntryInput): Promise<TimeEntry> {
-  assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.write_own"]);
+  await assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.write_own"]);
   try {
     const row = await withUser(getDb(), caller, async (tx) => {
       const now = new Date();
@@ -110,7 +110,7 @@ export async function startTimeEntry(caller: Caller, input: StartTimeEntryInput)
         },
       });
     });
-    return serialize(row);
+    return serializeTimeEntry(row);
   } catch (error) {
     if (isOpenEntryConflict(error)) {
       throw new ApiFailure(409, "CONFLICT", "Masz już otwarty wpis");
@@ -121,7 +121,7 @@ export async function startTimeEntry(caller: Caller, input: StartTimeEntryInput)
 
 /** Zamyka bieżący otwarty wpis czasu pracy; gdy takiego nie ma, zwraca 409 CONFLICT. */
 export async function stopTimeEntry(caller: Caller, input: StopTimeEntryInput): Promise<TimeEntry> {
-  assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.write_own"]);
+  await assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.write_own"]);
   const row = await withUser(getDb(), caller, async (tx) => {
     const open = await tx.timeEntry.findFirst({ where: { endedAt: null } });
     if (!open) {
@@ -137,7 +137,7 @@ export async function stopTimeEntry(caller: Caller, input: StopTimeEntryInput): 
       },
     });
   });
-  return serialize(row);
+  return serializeTimeEntry(row);
 }
 
 /**
@@ -145,7 +145,7 @@ export async function stopTimeEntry(caller: Caller, input: StopTimeEntryInput): 
  * w tym wpisy rozpoczęte przed `from` i zakończone po `from` (np. praca nocna) albo nadal otwarte.
  */
 export async function listTimeEntries(caller: Caller, query: TimeEntriesQuery): Promise<TimeEntriesList> {
-  assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.read_own"]);
+  await assertTimePermission(caller, TIMOTIME_PERMISSIONS.keys["entries.read_own"]);
   const { from, to } = resolveEntriesRange(query);
   const rows = await withUser(getDb(), caller, (tx) =>
     tx.timeEntry.findMany({
@@ -157,7 +157,7 @@ export async function listTimeEntries(caller: Caller, query: TimeEntriesQuery): 
     }),
   );
   return {
-    entries: rows.map(serialize),
+    entries: rows.map(serializeTimeEntry),
     from: from.toISOString(),
     to: to.toISOString(),
   };

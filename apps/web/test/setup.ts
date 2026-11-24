@@ -17,25 +17,29 @@ export function coreToken({
   accountId,
   organizationId,
   employeeId = crypto.randomUUID(),
-  audience = [API, `${CORE}/api/auth/oauth2/userinfo`],
+  authzRevision = 0,
+  issuer = process.env.CORE_AUTH_URL ?? CORE,
+  audience = [API, `${issuer}/api/auth/oauth2/userinfo`],
   expiresIn = "5m",
 }: {
   accountId: string;
   organizationId: string;
   employeeId?: string;
+  authzRevision?: number;
+  issuer?: string;
   audience?: string | string[];
   expiresIn?: string;
 }): Promise<string> {
   return new SignJWT({
     org_id: organizationId,
     employee_id: employeeId,
-    authz_rev: 0,
+    authz_rev: authzRevision,
     sid: "sesja-core",
     client_id: "timotime-mobile",
     scope: "openid profile email offline_access",
   })
     .setProtectedHeader({ alg: "EdDSA", kid: "test", typ: "at+jwt" })
-    .setIssuer(CORE)
+    .setIssuer(issuer)
     .setSubject(accountId)
     .setAudience(audience)
     .setIssuedAt()

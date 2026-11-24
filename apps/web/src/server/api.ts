@@ -1,15 +1,17 @@
 import "server-only";
+import { AuthError, AuthUnavailableError } from "@monorise-team/auth";
+import { PermissionError } from "@monorise-team/permissions";
 import {
   CoreApiError,
   CoreApiMissingTokenError,
   CoreApiProtocolError,
   CoreApiUnavailableError,
 } from "@monorise-team/sdk";
-import { AuthError, AuthUnavailableError } from "@monorise-team/auth";
 import type { ApiErrorBody, ErrorCode } from "@timotime/contracts";
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 import { config } from "./config";
+import { CoreMachineTokenError } from "./core-machine";
 
 /** Błąd API ze stałym kodem (standard API Monorise, ADR-0044). */
 export class ApiFailure extends Error {
@@ -58,6 +60,12 @@ function toFailure(error: unknown): ApiFailure {
   }
   if (error instanceof AuthUnavailableError) {
     return new ApiFailure(503, "INTERNAL", "Logowanie Monorise jest chwilowo niedostępne");
+  }
+  if (error instanceof PermissionError) {
+    return new ApiFailure(403, "PERMISSION_DENIED", "Brak uprawnienia do tej operacji");
+  }
+  if (error instanceof CoreMachineTokenError) {
+    return new ApiFailure(503, "INTERNAL", "MonoriseCore jest chwilowo niedostępny");
   }
   if (error instanceof CoreApiMissingTokenError) {
     return new ApiFailure(401, "UNAUTHENTICATED", "Zaloguj się kontem Monorise");

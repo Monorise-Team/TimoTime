@@ -8,8 +8,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { TIMOTIME_PERMISSION_MANIFEST, TIMOTIME_PERMISSIONS, TIMOTIME_ROLE_TEMPLATES } from "@timotime/contracts";
 import { z } from "zod";
+import { CORE_PERMISSIONS_REGISTER_SCOPE, CoreMachineTokenError, requestMachineToken } from "./core-machine.ts";
 
-export const CORE_PERMISSIONS_REGISTER_SCOPE = "core:permissions.register";
+export { CORE_PERMISSIONS_REGISTER_SCOPE };
 export const TIMOTIME_PRODUCT_KEY = TIMOTIME_PERMISSIONS.product;
 
 export type RegistrationStep = "config" | "token" | "permissions" | "roleTemplates";
@@ -43,16 +44,6 @@ export class CoreRegistrationError extends Error {
     this.details = options?.details ?? [];
   }
 }
-
-const TokenResponseSchema = z.object({
-  access_token: z.string().min(1),
-});
-
-const OAuthErrorResponseSchema = z.object({
-  error: z.string().optional(),
-  error_description: z.string().optional(),
-  message: z.string().optional(),
-});
 
 export const RegisterPermissionsSummarySchema = z.object({
   added: z.array(z.string()),
@@ -208,64 +199,27 @@ async function readJsonSafely(response: Response): Promise<unknown> {
   }
 }
 
-async function requestMachineToken(config: CoreRegistrationConfig, fetchFn: typeof globalThis.fetch): Promise<string> {
-  const tokenUrl = `${config.coreAuthUrl}/api/auth/oauth2/token`;
-  const body = new URLSearchParams({
-    grant_type: "client_credentials",
-    client_id: config.clientId,
-    client_secret: config.clientSecret,
-    resource: config.coreApiUrl,
-    scope: CORE_PERMISSIONS_REGISTER_SCOPE,
-  });
-
-  let response: Response;
+async function requestRegistrationToken(
+  config: CoreRegistrationConfig,
+  fetchFn: typeof globalThis.fetch,
+): Promise<string> {
   try {
-    response = await fetchFn(tokenUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body: body.toString(),
+    const result = await requestMachineToken({
+      ...config,
+      scope: CORE_PERMISSIONS_REGISTER_SCOPE,
+      fetch: fetchFn,
     });
+    return result.accessToken;
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new CoreRegistrationError(
-      "token",
-      `Nie udało się połączyć z serwerem logowania MonoriseCore (${tokenUrl}): ${reason}`,
-      { cause: error },
-    );
+    if (error instanceof CoreMachineTokenError) {
+      throw new CoreRegistrationError("token", error.message, {
+        status: error.status,
+        code: error.code,
+        cause: error,
+      });
+    }
+    throw error;
   }
-
-  const payload = await readJsonSafely(response);
-  if (!response.ok) {
-    const parsedError = OAuthErrorResponseSchema.safeParse(payload);
-    const errorCode = parsedError.success ? parsedError.data.error : undefined;
-    const errorDescription = parsedError.success
-      ? (parsedError.data.error_description ?? parsedError.data.message)
-      : undefined;
-    const parts = [errorCode, errorDescription].filter((part): part is string => Boolean(part && part.trim()));
-    const suffix = parts.length > 0 ? `: ${parts.join(" (")}${parts.length > 1 ? ")" : ""}` : "";
-    throw new CoreRegistrationError(
-      "token",
-      `Serwer logowania MonoriseCore odrzucił prośbę o token maszynowy (HTTP ${response.status})${suffix}.`,
-      {
-        status: response.status,
-        code: errorCode,
-      },
-    );
-  }
-
-  const parsedToken = TokenResponseSchema.safeParse(payload);
-  if (!parsedToken.success) {
-    throw new CoreRegistrationError(
-      "token",
-      "Serwer logowania MonoriseCore zwrócił odpowiedź bez poprawnego pola access_token.",
-      { status: response.status },
-    );
-  }
-
-  return parsedToken.data.access_token;
 }
 
 function formatApiErrorMessage(
@@ -369,7 +323,7 @@ export async function registerWithCore(options: RegisterWithCoreOptions): Promis
   const config = validateConfig(options);
   const fetchFn = options.fetch ?? globalThis.fetch;
 
-  const accessToken = await requestMachineToken(config, fetchFn);
+  const accessToken = await requestRegistrationToken(config, fetchFn);
   options.onStep?.({ step: "token", clientId: config.clientId });
 
   const permissions = await putCoreRegistry({
