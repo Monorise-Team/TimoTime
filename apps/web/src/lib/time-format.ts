@@ -64,27 +64,77 @@ export function entryDurationMs(entry: TimeEntry, nowMs: number): number {
   return Math.max(0, end - start);
 }
 
+/** Wycinek wpisu przypadający na jeden lokalny dzień kalendarzowy (po podziale o północy). */
+export interface DayEntrySlice {
+  entry: TimeEntry;
+  durationMs: number;
+  startedBeforeDay: boolean;
+  endedAfterDay: boolean;
+}
+
 export interface DayGroup {
   dateKey: string;
-  entries: TimeEntry[];
+  entries: DayEntrySlice[];
   workMs: number;
   breakMs: number;
 }
 
-/** Grupuje wpisy według lokalnego dnia i liczy sumy czasu pracy (bez przerw) oraz przerw. */
-export function groupEntriesByDay(entries: readonly TimeEntry[], nowMs: number): DayGroup[] {
+/**
+ * Grupuje wpisy według lokalnego dnia kalendarzowego, dzieląc wpisy nocne o lokalnej północy.
+ * Gdy podano `range`, liczy tylko dni i fragmenty mieszczące się w tym przedziale (np. dzisiejszy dzień albo tydzień).
+ */
+export function groupEntriesByDay(
+  entries: readonly TimeEntry[],
+  nowMs: number,
+  range?: { from: string; to: string },
+): DayGroup[] {
+  const rangeFromMs = range ? new Date(range.from).getTime() : null;
+  const rangeToMs = range ? new Date(range.to).getTime() : null;
   const map = new Map<string, DayGroup>();
+
   for (const entry of entries) {
-    const key = localDateKey(new Date(entry.startedAt));
-    let group = map.get(key);
-    if (!group) {
-      group = { dateKey: key, entries: [], workMs: 0, breakMs: 0 };
-      map.set(key, group);
+    const entryStart = new Date(entry.startedAt).getTime();
+    const entryEnd = entry.endedAt ? new Date(entry.endedAt).getTime() : Math.max(nowMs, entryStart);
+    const effectiveEnd = Math.max(entryStart, entryEnd);
+
+    const clampedStart = rangeFromMs !== null ? Math.max(entryStart, rangeFromMs) : entryStart;
+    const clampedEnd = rangeToMs !== null ? Math.min(effectiveEnd, rangeToMs) : effectiveEnd;
+    if (clampedEnd < clampedStart) continue;
+
+    const cursor = new Date(clampedStart);
+    cursor.setHours(0, 0, 0, 0);
+
+    while (cursor.getTime() <= clampedEnd) {
+      const dayStart = cursor.getTime();
+      const nextDay = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1, 0, 0, 0, 0);
+      const nextDayStart = nextDay.getTime();
+      const sliceStart = Math.max(clampedStart, dayStart);
+      const sliceEnd = Math.min(clampedEnd, nextDayStart);
+      const durationMs = Math.max(0, sliceEnd - sliceStart);
+
+      // Pomijaj pusty początek następnego dnia, gdy wpis kończy się równo o 00:00:00.000
+      const endedAtMidnight = sliceStart === dayStart && sliceEnd === dayStart && entryStart < dayStart;
+      if (!endedAtMidnight) {
+        const key = localDateKey(cursor);
+        let group = map.get(key);
+        if (!group) {
+          group = { dateKey: key, entries: [], workMs: 0, breakMs: 0 };
+          map.set(key, group);
+        }
+        group.entries.push({
+          entry,
+          durationMs,
+          startedBeforeDay: entryStart < dayStart,
+          endedAfterDay: effectiveEnd > nextDayStart,
+        });
+        if (entry.kind === "BREAK") group.breakMs += durationMs;
+        else group.workMs += durationMs;
+      }
+
+      if (nextDayStart > clampedEnd) break;
+      cursor.setTime(nextDayStart);
     }
-    group.entries.push(entry);
-    const ms = entryDurationMs(entry, nowMs);
-    if (entry.kind === "BREAK") group.breakMs += ms;
-    else group.workMs += ms;
   }
+
   return [...map.values()].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
 }

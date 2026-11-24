@@ -1,24 +1,34 @@
 import "server-only";
+import type { Session } from "@monorise-team/auth/next";
 import { createCoreClient } from "@monorise-team/sdk";
 import type { Me } from "@timotime/contracts";
-import { requireUser, type Caller } from "./auth";
+import { ApiFailure } from "./api";
+import { requireUser } from "./auth";
 import { config } from "./config";
 
 /**
  * Klient Core API po stronie serwera z tokenem zalogowanej osoby (`@monorise-team/sdk`).
- * W przeglądarce (BFF) pobiera token dla Core API z sesji; przy wywołaniu bearer używa przekazanego tokenu.
+ * Działa wyłącznie z sesją BFF przeglądarki, bo tylko ona ma token odświeżania pozwalający pobrać
+ * token dla odbiorcy Core API (token bearer z telefonu ma odbiorcę API TimoTime).
  */
-export function createUserCoreClient(caller: Caller) {
+export function createUserCoreClient(session: Session) {
   return createCoreClient({
     baseUrl: config.coreApiUrl,
-    getAccessToken: () => (caller.session ? caller.session.accessToken(config.coreApiUrl) : caller.token),
+    getAccessToken: () => session.accessToken(config.coreApiUrl),
   });
 }
 
 /** Zwraca osobę, pracownika i firmę z MonoriseCore (`GET /core/v1/me`), aby nagłówek pokazał np. „Anna Nowak · Acme”. */
 export async function getCurrentProfile(request: Request): Promise<Me> {
   const caller = await requireUser(request);
-  const core = createUserCoreClient(caller);
+  if (!caller.session) {
+    throw new ApiFailure(
+      403,
+      "PERMISSION_DENIED",
+      "Aplikacja na telefon pobiera dane osoby i firmy bezpośrednio z Core API",
+    );
+  }
+  const core = createUserCoreClient(caller.session);
   const me = await core.getMe();
   const fullName = `${me.employee.firstName} ${me.employee.lastName}`.trim();
   return {

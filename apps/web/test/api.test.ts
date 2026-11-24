@@ -5,8 +5,10 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import type { Authenticated, Session } from "@monorise-team/auth/next";
+import { uuidv7, withUser } from "@timotime/db";
 import { NextRequest } from "next/server";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as signInRoute from "@/app/api/auth/sign-in/route";
 import * as health from "@/app/api/v1/health/route";
 import * as me from "@/app/api/v1/me/route";
@@ -14,6 +16,8 @@ import * as current from "@/app/api/v1/time/current/route";
 import * as entries from "@/app/api/v1/time/entries/route";
 import * as start from "@/app/api/v1/time/start/route";
 import * as stop from "@/app/api/v1/time/stop/route";
+import { getAuth } from "@/server/auth";
+import { getDb } from "@/server/db";
 import { API, CORE, coreToken } from "./setup";
 
 const BASE = "http://time.localhost:3300/api/v1";
@@ -114,6 +118,10 @@ beforeEach(() => {
   process.env.CORE_API_URL = fakeCoreUrl;
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 afterAll(async () => {
   await new Promise<void>((resolve) => fakeCoreServer.close(() => resolve()));
 });
@@ -125,6 +133,34 @@ async function signIn(organizationId = ACME, accountId = randomUUID(), employeeI
     employeeId,
     token: await coreToken({ accountId, organizationId, employeeId }),
   };
+}
+
+/** Sesja przeglądarki (BFF) udająca `getAuth().authenticate` z dostępem do tokenu Core API. */
+function mockBrowserSession(coreAccessToken: string) {
+  const context = {
+    accountId: ANNA_ID,
+    organizationId: ACME,
+    employeeId: ANNA_EMPLOYEE_ID,
+    sessionId: "sesja-core",
+    authzRevision: 0,
+    methods: [],
+    clientId: "timotime-web",
+    scopes: ["openid", "profile", "email", "offline_access"],
+    expiresAt: new Date(Date.now() + 5 * 60_000),
+  };
+  const requestedResources: (string | undefined)[] = [];
+  const session: Session = {
+    context,
+    profile: { email: "anna@acme.test", name: "Anna Nowak" },
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60_000),
+    accessToken: async (resource?: string) => {
+      requestedResources.push(resource);
+      return coreAccessToken;
+    },
+  };
+  const authenticated: Authenticated = { context, via: "session", session };
+  vi.spyOn(getAuth(), "authenticate").mockResolvedValue(authenticated);
+  return { requestedResources };
 }
 
 describe("API: sesja, Core SDK i walidacja", () => {
@@ -144,10 +180,18 @@ describe("API: sesja, Core SDK i walidacja", () => {
     expect(body.meta.requestId).toMatch(/^req_/);
   });
 
-  it("GET /api/v1/me pobiera osobę i firmę z Core przez @monorise-team/sdk", async () => {
-    const anna = await signIn(ACME, ANNA_ID, ANNA_EMPLOYEE_ID);
-    const { status, body } = await call(me.GET, "/me", { token: anna.token });
+  it("GET /api/v1/me z sesją przeglądarki (BFF) pobiera osobę i firmę z Core przez @monorise-team/sdk", async () => {
+    const coreApiToken = await coreToken({
+      accountId: ANNA_ID,
+      organizationId: ACME,
+      employeeId: ANNA_EMPLOYEE_ID,
+      audience: fakeCoreUrl,
+    });
+    const { requestedResources } = mockBrowserSession(coreApiToken);
+
+    const { status, body } = await call(me.GET, "/me");
     expect(status).toBe(200);
+    expect(requestedResources).toEqual([fakeCoreUrl]);
     expect(body.data).toMatchObject({
       account: { id: ANNA_ID, email: "anna@acme.test" },
       employee: { id: ANNA_EMPLOYEE_ID, firstName: "Anna", lastName: "Nowak", fullName: "Anna Nowak" },
@@ -155,21 +199,36 @@ describe("API: sesja, Core SDK i walidacja", () => {
     });
   });
 
-  it("mapuje błędy Core API na 401 i 503", async () => {
+  it("GET /api/v1/me odrzuca token bearer z telefonu (403 PERMISSION_DENIED) zamiast przekazywać go do Core", async () => {
     const anna = await signIn(ACME, ANNA_ID, ANNA_EMPLOYEE_ID);
+    const { status, body } = await call(me.GET, "/me", { token: anna.token });
+    expect(status).toBe(403);
+    expect(body.data).toBeNull();
+    expect(body.error.code).toBe("PERMISSION_DENIED");
+    expect(body.error.message).toMatch(/Core API/);
+  });
+
+  it("mapuje błędy Core API na 401 i 503 dla sesji BFF", async () => {
+    const coreApiToken = await coreToken({
+      accountId: ANNA_ID,
+      organizationId: ACME,
+      employeeId: ANNA_EMPLOYEE_ID,
+      audience: fakeCoreUrl,
+    });
+    mockBrowserSession(coreApiToken);
 
     coreMode = "unauthorized";
-    const unauth = await call(me.GET, "/me", { token: anna.token });
+    const unauth = await call(me.GET, "/me");
     expect(unauth.status).toBe(401);
     expect(unauth.body.error.code).toBe("UNAUTHENTICATED");
 
     coreMode = "server-error";
-    const failed = await call(me.GET, "/me", { token: anna.token });
+    const failed = await call(me.GET, "/me");
     expect(failed.status).toBe(503);
     expect(failed.body.error.code).toBe("INTERNAL");
 
     process.env.CORE_API_URL = "http://127.0.0.1:1";
-    const unavailable = await call(me.GET, "/me", { token: anna.token });
+    const unavailable = await call(me.GET, "/me");
     expect(unavailable.status).toBe(503);
     expect(unavailable.body.error.code).toBe("INTERNAL");
   });
@@ -285,6 +344,98 @@ describe("API: rejestracja czasu pracy (PostgreSQL z RLS)", () => {
     for (const item of list.body.data.entries as { endedAt: string | null }[]) {
       expect(item.endedAt).not.toBeNull();
     }
+  });
+
+  it("zwraca 409 CONFLICT przy dwóch równoczesnych wywołaniach start i zostawia jeden otwarty wpis", async () => {
+    const anna = await signIn();
+    // Rozgrzanie dwóch połączeń z puli przed równoczesnym startem
+    const warmup = await Promise.all([
+      call(current.GET, "/time/current", { token: anna.token }),
+      call(current.GET, "/time/current", { token: anna.token }),
+    ]);
+    expect(warmup.map((item) => item.body.data)).toEqual([null, null]);
+
+    const results = await Promise.all([
+      call(start.POST, "/time/start", { method: "POST", token: anna.token, body: { kind: "WORK" } }),
+      call(start.POST, "/time/start", { method: "POST", token: anna.token, body: { kind: "WORK" } }),
+    ]);
+    const statuses = results.map((result) => result.status).sort((a, b) => a - b);
+    expect(statuses).toEqual([201, 409]);
+
+    const conflict = results.find((result) => result.status === 409);
+    expect(conflict?.body.error.code).toBe("CONFLICT");
+    expect(conflict?.body.error.message).toBe("Masz już otwarty wpis");
+
+    const openEntries = await withUser(
+      getDb(),
+      { organizationId: anna.organizationId, accountId: anna.accountId },
+      (tx) => tx.timeEntry.findMany({ where: { endedAt: null } }),
+    );
+    expect(openEntries).toHaveLength(1);
+  });
+
+  it("GET /api/v1/time/entries uwzględnia wpisy nakładające się na zakres (np. praca nocna 22:00-02:00)", async () => {
+    const anna = await signIn();
+    const actor = { organizationId: anna.organizationId, accountId: anna.accountId };
+    const earlierId = uuidv7(Date.parse("2026-11-23T08:00:00.000Z"));
+    const overnightId = uuidv7(Date.parse("2026-11-23T22:00:00.000Z"));
+    const daytimeId = uuidv7(Date.parse("2026-11-24T09:00:00.000Z"));
+    const openBeforeRangeId = uuidv7(Date.parse("2026-11-24T22:00:00.000Z"));
+
+    await withUser(getDb(), actor, async (tx) => {
+      await tx.timeEntry.createMany({
+        data: [
+          {
+            id: earlierId,
+            organizationId: anna.organizationId,
+            accountId: anna.accountId,
+            employeeId: anna.employeeId,
+            kind: "WORK",
+            startedAt: new Date("2026-11-23T08:00:00.000Z"),
+            endedAt: new Date("2026-11-23T16:00:00.000Z"),
+          },
+          {
+            id: overnightId,
+            organizationId: anna.organizationId,
+            accountId: anna.accountId,
+            employeeId: anna.employeeId,
+            kind: "WORK",
+            startedAt: new Date("2026-11-23T22:00:00.000Z"),
+            endedAt: new Date("2026-11-24T02:00:00.000Z"),
+          },
+          {
+            id: daytimeId,
+            organizationId: anna.organizationId,
+            accountId: anna.accountId,
+            employeeId: anna.employeeId,
+            kind: "REMOTE",
+            startedAt: new Date("2026-11-24T09:00:00.000Z"),
+            endedAt: new Date("2026-11-24T12:00:00.000Z"),
+          },
+          {
+            id: openBeforeRangeId,
+            organizationId: anna.organizationId,
+            accountId: anna.accountId,
+            employeeId: anna.employeeId,
+            kind: "WORK",
+            startedAt: new Date("2026-11-24T22:00:00.000Z"),
+            endedAt: null,
+          },
+        ],
+      });
+    });
+
+    const day24 = await call(entries.GET, "/time/entries?from=2026-11-24&to=2026-11-24", { token: anna.token });
+    expect(day24.status).toBe(200);
+    expect(day24.body.data.entries.map((item: { id: string }) => item.id)).toEqual([
+      openBeforeRangeId,
+      daytimeId,
+      overnightId,
+    ]);
+
+    const day25 = await call(entries.GET, "/time/entries?from=2026-11-25&to=2026-11-25", { token: anna.token });
+    expect(day25.status).toBe(200);
+    expect(day25.body.data.entries.map((item: { id: string }) => item.id)).toEqual([openBeforeRangeId]);
   });
 
   it("osoba z innej firmy ani współpracownik nie widzi i nie zamknie cudzego wpisu", async () => {

@@ -221,8 +221,14 @@ function TimeTrackerContent() {
     }
   }
 
-  const todayGroups = useMemo(() => groupEntriesByDay(todayEntries, nowMs), [todayEntries, nowMs]);
-  const weekGroups = useMemo(() => groupEntriesByDay(weekEntries, nowMs), [weekEntries, nowMs]);
+  const todayGroups = useMemo(
+    () => groupEntriesByDay(todayEntries, nowMs, todayRange(new Date(nowMs))),
+    [todayEntries, nowMs],
+  );
+  const weekGroups = useMemo(
+    () => groupEntriesByDay(weekEntries, nowMs, currentWeekRange(new Date(nowMs))),
+    [weekEntries, nowMs],
+  );
 
   if (authState === "loading") {
     return (
@@ -395,7 +401,6 @@ function TimeTrackerContent() {
               <TabsContent value="today" className="p-4">
                 <DayGroupList
                   groups={todayGroups}
-                  nowMs={nowMs}
                   emptyTitle="Brak wpisów z dzisiaj"
                   emptyDescription="Kliknij Rozpocznij pracę albo inny status powyżej, aby dodać pierwszy wpis."
                 />
@@ -404,7 +409,6 @@ function TimeTrackerContent() {
               <TabsContent value="week" className="p-4">
                 <DayGroupList
                   groups={weekGroups}
-                  nowMs={nowMs}
                   emptyTitle="Brak wpisów w tym tygodniu"
                   emptyDescription="Wszystkie wpisy od poniedziałku do niedzieli pojawią się w tym miejscu."
                 />
@@ -419,12 +423,10 @@ function TimeTrackerContent() {
 
 function DayGroupList({
   groups,
-  nowMs,
   emptyTitle,
   emptyDescription,
 }: {
   groups: DayGroup[];
-  nowMs: number;
   emptyTitle: string;
   emptyDescription: string;
 }) {
@@ -445,11 +447,13 @@ function DayGroupList({
           </div>
 
           <ul className="flex flex-col gap-1.5">
-            {group.entries.map((entry) => {
-              const duration = entryDurationMs(entry, nowMs);
+            {group.entries.map((slice) => {
+              const { entry } = slice;
+              const startLabel = slice.startedBeforeDay ? "00:00" : formatTime(entry.startedAt);
+              const endLabel = slice.endedAfterDay ? "24:00" : entry.endedAt ? formatTime(entry.endedAt) : "teraz";
               return (
                 <li
-                  key={entry.id}
+                  key={`${group.dateKey}:${entry.id}`}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-row bg-bg-tertiary/60 px-3 py-2"
                 >
                   <div className="flex flex-wrap items-center gap-2">
@@ -457,11 +461,13 @@ function DayGroupList({
                       {TIME_ENTRY_KIND_LABELS[entry.kind]}
                     </Badge>
                     <span className="text-sm text-text-primary tabular-nums">
-                      {formatTime(entry.startedAt)} do {entry.endedAt ? formatTime(entry.endedAt) : "teraz"}
+                      {startLabel} do {endLabel}
                     </span>
                     {entry.note ? <span className="text-xs text-text-secondary">({entry.note})</span> : null}
                   </div>
-                  <span className="text-sm font-medium text-text-primary tabular-nums">{formatDuration(duration)}</span>
+                  <span className="text-sm font-medium text-text-primary tabular-nums">
+                    {formatDuration(slice.durationMs)}
+                  </span>
                 </li>
               );
             })}
