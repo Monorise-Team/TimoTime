@@ -1,0 +1,18 @@
+# Lokalna baza do pracy nad TimoTime:
+# - PostgreSQL (pnpm db:up, potem pnpm db:migrate) na porcie 5435, żeby nie zderzyć się z Core (5433) i AvenMail (5434).
+# Kontener i wolumen mają przedrostek timo-time (małe litery, wyrazy z myślnikiem).
+name: timo-time
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - timo-time-postgres:/var/lib/postgresql/data
+
+volumes:
+  timo-time-postgres:
