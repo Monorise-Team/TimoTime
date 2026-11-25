@@ -6,6 +6,14 @@ const list = (value: string | undefined, fallback = "") =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const parseEventFeedIntervalMs = (value: string | undefined, fallback: number): number => {
+  if (value === undefined || value.trim() === "") return fallback;
+  const trimmed = value.trim();
+  if (!/^(0|[1-9][0-9]*)$/.test(trimmed)) return 0;
+  const parsed = Number(trimmed);
+  return Number.isSafeInteger(parsed) ? parsed : 0;
+};
+
 /** Ustawienia serwera ze zmiennych środowiskowych (lokalnie `.env.local`, tworzy go `pnpm setup:env`). */
 export const config = {
   /** Baza timo_time, rola aplikacji timo_time_app (bez omijania RLS). */
@@ -48,5 +56,10 @@ export const config = {
   /** Klucze publiczne Core wpisane na stałe (JWKS w JSON) zamiast pobierania z Core: testy. */
   get coreJwks() {
     return process.env.TIMOTIME_CORE_JWKS ?? "";
+  },
+  /** Interwał odpytywania kanału zdarzeń Core w ms (0 wyłącza; domyślnie 5000 w development, 0 poza nim). */
+  get eventFeedIntervalMs() {
+    const fallback = process.env.NODE_ENV === "development" ? 5000 : 0;
+    return parseEventFeedIntervalMs(process.env.TIMOTIME_EVENT_FEED_INTERVAL_MS, fallback);
   },
 };

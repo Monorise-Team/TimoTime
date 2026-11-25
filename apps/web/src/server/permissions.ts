@@ -19,13 +19,21 @@ import { getMachineCoreClient } from "./core";
 export const PRODUCT_ACCESS_REQUIRED_MESSAGE =
   "TimoTime nie jest włączony dla Twojego konta. Poproś Ownera firmy o dostęp.";
 
-const permissionCache = createPermissionCache({
+type PermissionCache = ReturnType<typeof createPermissionCache>;
+
+/**
+ * Jedna pamięć na proces. Next.js wczytuje `instrumentation.ts` (pobieranie zdarzeń z Core) i trasy API
+ * jako osobne kopie modułów, więc zwykła zmienna modułu dałaby dwie różne pamięci: zdarzenie czyściłoby
+ * nie tę, z której korzystają trasy.
+ */
+const processGlobal = globalThis as typeof globalThis & { __timotimePermissionCache?: PermissionCache };
+const permissionCache = (processGlobal.__timotimePermissionCache ??= createPermissionCache({
   load: ({ organizationId, accountId }) =>
     getMachineCoreClient().getProductPermissionSnapshot({
       path: { productKey: TIMOTIME_PERMISSIONS.product },
       query: { organizationId, accountId },
     }),
-});
+}));
 
 /**
  * Pobiera migawkę uprawnień z pamięci podręcznej (5 min, odświeżana od razu przy wyższym `authz_rev`).

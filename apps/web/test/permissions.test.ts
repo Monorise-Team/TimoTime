@@ -11,6 +11,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiFailure, route } from "@/server/api";
 import type { Caller } from "@/server/auth";
 import { resetMachineCoreTokenCache } from "@/server/core";
+import {
+  CORE_DIRECTORY_READ_SCOPE,
+  CORE_EVENTS_READ_SCOPE,
+  CORE_PERMISSIONS_READ_SCOPE,
+  CORE_PERMISSIONS_REGISTER_SCOPE,
+} from "@/server/core-machine";
 import * as serverDb from "@/server/db";
 import {
   assertTeamReadScope,
@@ -133,7 +139,19 @@ beforeEach(async () => {
   fakeCore = await createFakeCore({
     issuer: FAKE_CORE_URL,
     coreApiUrl: FAKE_CORE_URL,
-    products: [{ key: "timotime", clientId: CLIENT_ID, clientSecret: CLIENT_SECRET }],
+    products: [
+      {
+        key: "timotime",
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        scopes: [
+          CORE_PERMISSIONS_REGISTER_SCOPE,
+          CORE_PERMISSIONS_READ_SCOPE,
+          CORE_DIRECTORY_READ_SCOPE,
+          CORE_EVENTS_READ_SCOPE,
+        ],
+      },
+    ],
   });
 
   acme = fakeCore.organization({ name: "Acme", domain: "acme.test" });
