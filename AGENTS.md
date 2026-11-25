@@ -55,7 +55,7 @@ Nazwę i przeznaczenie ustala właściciel. Potem: wpis w `labels/repos.json` w 
 
 ### Kierunek
 
-Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (sesja BFF w bazie albo w zaszyfrowanym ciasteczku, ADR-0098), `permissions`, `events`, `sdk` i `testing`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, zaproszenia, dostęp do aplikacji, migawkę uprawnień dla produktów i dziennik zdarzeń. TimoTime czyta uprawnienia z migawki Core i ma widok kierownika. MonorisePortal (panel firmy) ma pierwszą wersję: firma, pracownicy i zaproszenia, struktura, role i dostęp do aplikacji. Teraz dokumentacja Portalu i testy jego tras z atrapą Core, potem wysyłka zdarzeń z outboxa Core, na końcu `ui` i `tokens` z wyglądu starego projektu aven-mail. AvenMail i testy na żywo czekają.
+Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (sesja BFF w bazie albo w zaszyfrowanym ciasteczku, ADR-0098), `permissions`, `events` (także pobieranie kanału zdarzeń Core), `sdk` i `testing`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, zaproszenia, dostęp do aplikacji, migawkę uprawnień, dziennik i kanał zdarzeń dla produktów (ADR-0100, do czasu EventBridge i SQS). TimoTime czyta uprawnienia z migawki Core, ma widok kierownika i w kilka sekund reaguje na zmiany uprawnień. MonorisePortal (panel firmy) ma pierwszą wersję z testami tras: firma, pracownicy i zaproszenia, struktura, role i dostęp do aplikacji. Następny krok: `ui` i `tokens` z wyglądu starego projektu aven-mail (razem z właścicielem). AvenMail i testy na żywo czekają.
 
 ### Utrzymanie tych zasad
 
