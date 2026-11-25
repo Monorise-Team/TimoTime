@@ -13,8 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@monorise-team/sdk": "0.0.1-dev.7",
-    "@monorise-team/tokens": "0.0.1-dev.7",
+    "@monorise-team/sdk": "0.0.1-dev.8",
+    "@monorise-team/tokens": "0.0.1-dev.8",
     "@timotime/client": "workspace:*",
     "expo": "~58.0.26",
     "expo-auth-session": "~58.0.19",
@@ -29,7 +29,7 @@
     "react-native-safe-area-context": "~5.11.1"
   },
   "devDependencies": {
-    "@monorise-team/config": "0.0.1-dev.7",
+    "@monorise-team/config": "0.0.1-dev.8",
     "@types/react": "^19.3.0",
     "eslint": "^10.15.0",
     "typescript": "^6.0.3"
