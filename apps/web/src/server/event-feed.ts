@@ -128,15 +128,16 @@ export function createCoreEventPoller(options: CreateCoreEventPollerOptions = {}
   });
 }
 
-let stopCoreEventPolling: (() => void) | null = null;
+// Strażnik „jeden poller na proces” we wspólnym obiekcie procesu (osobne kopie modułów w Next.js, HMR)
+const processGlobal = globalThis as typeof globalThis & { __timotimeStopCoreEventPolling?: (() => void) | null };
 
 /**
  * Uruchamia cykliczne odpytywanie kanału zdarzeń Core raz na proces, gdy `config.eventFeedIntervalMs > 0`.
  * Zwraca funkcję zatrzymującą odpytywanie.
  */
 export function startCoreEventPolling(options: CreateCoreEventPollerOptions = {}): () => void {
-  if (stopCoreEventPolling) {
-    return stopCoreEventPolling;
+  if (processGlobal.__timotimeStopCoreEventPolling) {
+    return processGlobal.__timotimeStopCoreEventPolling;
   }
 
   const intervalMs = options.intervalMs ?? config.eventFeedIntervalMs;
@@ -148,10 +149,10 @@ export function startCoreEventPolling(options: CreateCoreEventPollerOptions = {}
   const stop = poller.start();
   const wrappedStop = () => {
     stop();
-    if (stopCoreEventPolling === wrappedStop) {
-      stopCoreEventPolling = null;
+    if (processGlobal.__timotimeStopCoreEventPolling === wrappedStop) {
+      processGlobal.__timotimeStopCoreEventPolling = null;
     }
   };
-  stopCoreEventPolling = wrappedStop;
+  processGlobal.__timotimeStopCoreEventPolling = wrappedStop;
   return wrappedStop;
 }
