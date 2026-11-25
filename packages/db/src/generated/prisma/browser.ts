@@ -27,3 +27,13 @@ export type Session = Prisma.SessionModel
  * Wpis czasu pracy pracownika. Jedna osoba może mieć co najwyżej jeden otwarty wpis (indeks częściowy w migracji).
  */
 export type TimeEntry = Prisma.TimeEntryModel
+/**
+ * Model EventFeedCursor
+ * Kursor ostatnio przetworzonego zdarzenia z kanału HTTP produktu (bez danych firmowych, bez RLS).
+ */
+export type EventFeedCursor = Prisma.EventFeedCursorModel
+/**
+ * Model ProcessedEvent
+ * Zapis przetworzonych zdarzeń do deduplikacji po stronie odbiorcy (bez danych firmowych, bez RLS).
+ */
+export type ProcessedEvent = Prisma.ProcessedEventModel

@@ -66,3 +66,27 @@ model TimeEntry {
   @@map("time_entries")
   @@schema("public")
 }
+
+/// Kursor ostatnio przetworzonego zdarzenia z kanału HTTP produktu (bez danych firmowych, bez RLS).
+model EventFeedCursor {
+  /// Nazwa kanału zdarzeń, np. "core".
+  id        String   @id
+  /// Numer ostatnio przetworzonego zdarzenia (liczba dziesiętna jako napis).
+  sequence  String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("event_feed_cursors")
+  @@schema("public")
+}
+
+/// Zapis przetworzonych zdarzeń do deduplikacji po stronie odbiorcy (bez danych firmowych, bez RLS).
+model ProcessedEvent {
+  consumer    String
+  eventId     String   @map("event_id") @db.Uuid
+  processedAt DateTime @map("processed_at") @db.Timestamptz(3)
+
+  @@id([consumer, eventId])
+  @@index([processedAt])
+  @@map("processed_events")
+  @@schema("public")
+}

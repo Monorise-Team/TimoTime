@@ -398,7 +398,9 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Session: 'Session',
-  TimeEntry: 'TimeEntry'
+  TimeEntry: 'TimeEntry',
+  EventFeedCursor: 'EventFeedCursor',
+  ProcessedEvent: 'ProcessedEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -414,7 +416,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "session" | "timeEntry"
+    modelProps: "session" | "timeEntry" | "eventFeedCursor" | "processedEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -566,6 +568,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    EventFeedCursor: {
+      payload: Prisma.$EventFeedCursorPayload<ExtArgs>
+      fields: Prisma.EventFeedCursorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EventFeedCursorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EventFeedCursorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>
+        }
+        findFirst: {
+          args: Prisma.EventFeedCursorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EventFeedCursorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>
+        }
+        findMany: {
+          args: Prisma.EventFeedCursorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>[]
+        }
+        create: {
+          args: Prisma.EventFeedCursorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>
+        }
+        createMany: {
+          args: Prisma.EventFeedCursorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EventFeedCursorCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>[]
+        }
+        delete: {
+          args: Prisma.EventFeedCursorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>
+        }
+        update: {
+          args: Prisma.EventFeedCursorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>
+        }
+        deleteMany: {
+          args: Prisma.EventFeedCursorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EventFeedCursorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EventFeedCursorUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>[]
+        }
+        upsert: {
+          args: Prisma.EventFeedCursorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventFeedCursorPayload>
+        }
+        aggregate: {
+          args: Prisma.EventFeedCursorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEventFeedCursor>
+        }
+        groupBy: {
+          args: Prisma.EventFeedCursorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EventFeedCursorGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EventFeedCursorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EventFeedCursorCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProcessedEvent: {
+      payload: Prisma.$ProcessedEventPayload<ExtArgs>
+      fields: Prisma.ProcessedEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProcessedEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProcessedEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        findFirst: {
+          args: Prisma.ProcessedEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProcessedEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        findMany: {
+          args: Prisma.ProcessedEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>[]
+        }
+        create: {
+          args: Prisma.ProcessedEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        createMany: {
+          args: Prisma.ProcessedEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProcessedEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>[]
+        }
+        delete: {
+          args: Prisma.ProcessedEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        update: {
+          args: Prisma.ProcessedEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProcessedEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProcessedEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProcessedEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProcessedEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        aggregate: {
+          args: Prisma.ProcessedEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProcessedEvent>
+        }
+        groupBy: {
+          args: Prisma.ProcessedEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProcessedEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedEventCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -632,6 +782,24 @@ export const TimeEntryScalarFieldEnum = {
 } as const
 
 export type TimeEntryScalarFieldEnum = (typeof TimeEntryScalarFieldEnum)[keyof typeof TimeEntryScalarFieldEnum]
+
+
+export const EventFeedCursorScalarFieldEnum = {
+  id: 'id',
+  sequence: 'sequence',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EventFeedCursorScalarFieldEnum = (typeof EventFeedCursorScalarFieldEnum)[keyof typeof EventFeedCursorScalarFieldEnum]
+
+
+export const ProcessedEventScalarFieldEnum = {
+  consumer: 'consumer',
+  eventId: 'eventId',
+  processedAt: 'processedAt'
+} as const
+
+export type ProcessedEventScalarFieldEnum = (typeof ProcessedEventScalarFieldEnum)[keyof typeof ProcessedEventScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -872,6 +1040,8 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   session?: Prisma.SessionOmit
   timeEntry?: Prisma.TimeEntryOmit
+  eventFeedCursor?: Prisma.EventFeedCursorOmit
+  processedEvent?: Prisma.ProcessedEventOmit
 }
 
 /* Types for Logging */

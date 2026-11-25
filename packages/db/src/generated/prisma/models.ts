@@ -10,4 +10,6 @@
  */
 export type * from './models/Session.js'
 export type * from './models/TimeEntry.js'
+export type * from './models/EventFeedCursor.js'
+export type * from './models/ProcessedEvent.js'
 export type * from './commonInputTypes.js'
