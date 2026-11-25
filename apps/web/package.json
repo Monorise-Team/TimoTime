@@ -11,6 +11,8 @@
     "lint": "eslint --max-warnings=0 .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "openapi": "pnpm --filter @timotime/contracts build && node scripts/generate-openapi.mjs",
+    "openapi:check": "pnpm --filter @timotime/contracts build && node scripts/generate-openapi.mjs --check",
     "permissions:register": "pnpm --filter @timotime/contracts build && node scripts/register-permissions.mjs"
   },
   "dependencies": {

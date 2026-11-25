@@ -11,3 +11,4 @@ packages/db/src/generated/
 packages/db/prisma/migrations/
 .github/ISSUE_TEMPLATE/
 .github/pull_request_template.md
+openapi/timotime-api.json
