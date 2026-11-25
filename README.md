@@ -59,7 +59,7 @@ Serwer TimoTime pobiera w MonoriseCore token maszynowy OAuth 2.1 (`grant_type=cl
 
 Migawki trzyma jedna pamięć podręczna `createPermissionCache` z `@monorise-team/permissions` (maksymalnie 5 minut, odświeżana od razu po wzroście `authz_rev` w tokenie). Sprawdzanie uprawnień odbywa się w jednym miejscu (`apps/web/src/server/permissions.ts`):
 
-- brak `"timotime"` w `snapshot.products` kończy się błędem `403 PERMISSION_DENIED` z czytelnym komunikatem dla użytkownika,
+- brak `"timotime"` w `snapshot.products` kończy się błędem `403 PRODUCT_ACCESS_REQUIRED` z czytelnym komunikatem dla użytkownika (brak konkretnego uprawnienia nadal zwraca `403 PERMISSION_DENIED`),
 - własne wpisy wymagają `timotime.entries.read_own` (odczyt) oraz `timotime.entries.write_own` (start i stop),
 - `GET /api/v1/me` (przeglądarka BFF) zwraca dodatkowo `capabilities: { trackOwnTime, viewTeam }`, na podstawie których interfejs pokazuje albo ukrywa zakładkę „Zespół”.
 
@@ -111,10 +111,26 @@ Wymagane zmienne środowiskowe (lokalnie z fallbackiem do `apps/web/.env.local`,
 - `TIMOTIME_OAUTH_CLIENT_ID`: identyfikator poufnego klienta produktu (`timotime-web`),
 - `TIMOTIME_OAUTH_CLIENT_SECRET`: sekret tego klienta (lokalnie z `pnpm oauth:seed` w MonoriseCore).
 
+## Zgodność z kontraktem produktu
+
+TimoTime jest sprawdzane wspólną biblioteką `@monorise-team/testing` (ADR-0046, ADR-0075) z atrapą MonoriseCore (`createFakeCore`) i opisem OpenAPI 3.1 generowanym z kodu (`apps/web/src/server/routes.ts`, `apps/web/src/server/openapi.ts`, schematy Zod z `@timotime/contracts`):
+
+- **Obowiązek 1 (uwierzytelnienie i uprawnienia)**: `apps/web/test/contract.test.ts` (`defineProductContractTests`) sprawdza, że każda chroniona trasa `/api/v1/*` odrzuca brak tokenu oraz niepoprawne tokeny (`401 UNAUTHENTICATED`), a poprawny token bez uprawnienia kończy się `403 PERMISSION_DENIED` w kopercie błędu `{ data: null, meta: { requestId }, error }`.
+- **Obowiązek 6 (dostęp firmy i konta do produktu)**: brak `Entitlement` firmy lub wyłączony `AppAccess` konta zwraca `403 PRODUCT_ACCESS_REQUIRED` na wszystkich trasach chronionych dostępem do produktu; trasa BFF `GET /api/v1/me` pozostaje dostępna, aby interfejs pokazał stan braku dostępu.
+- **Obowiązek 7 (OpenAPI 3.1)**: plik [`openapi/timotime-api.json`](openapi/timotime-api.json) opisuje wszystkie trasy `/api/v1/*`, oba schematy uwierzytelnienia (`bearerAuth` i `sessionCookie`), wspólny schemat błędu `ApiErrorResponse` oraz zapytania zakresowe `entries` (`from`, `to`, do 31 dni, bez stronicowania kursorowego).
+- **Separacja firm (RLS, ADR-0037)**: `apps/web/test/tenant-isolation.test.ts` (`checkTenantIsolation`) weryfikuje na testowej bazie PostgreSQL, że firma B nigdy nie odczyta wpisów firmy A przez `withUser` ani `withTeamScope`.
+
+```bash
+pnpm openapi                                                         # generuje openapi/timotime-api.json z kodu
+pnpm openapi:check                                                   # sprawdza aktualność openapi/timotime-api.json
+pnpm --filter @timotime/web exec vitest run test/contract.test.ts    # testy kontraktu produktu (bez bazy)
+```
+
 ## Kontrole
 
 ```bash
-pnpm check              # formatowanie, zgodność wersji, lint, typy, testy (w tym RLS i API), build (wymaga pnpm db:up)
+pnpm check              # formatowanie, zgodność wersji, OpenAPI, lint, typy, testy (kontrakt, RLS i API), build (wymaga pnpm db:up)
+pnpm openapi:check      # sprawdzenie aktualności openapi/timotime-api.json
 pnpm test               # testy wszystkich paczek i aplikacji
 ```
 

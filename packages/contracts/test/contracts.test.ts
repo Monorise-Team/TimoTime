@@ -2,6 +2,10 @@ import { permissionKeySchema, permissionManifestSchema } from "@monorise-team/pe
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  ApiErrorResponse,
+  apiSuccessSchema,
+  ERROR_CODES,
+  Health,
   Me,
   resolveEntriesRange,
   StartTimeEntryInput,
@@ -158,5 +162,23 @@ describe("schematy czasu pracy", () => {
         to: "2026-11-24T23:59:59.999Z",
       }).entries[0]?.employee.firstName,
     ).toBe("Anna");
+  });
+
+  it("zawiera PRODUCT_ACCESS_REQUIRED oraz waliduje koperty sukcesu i błędu", () => {
+    expect(ERROR_CODES).toContain("PRODUCT_ACCESS_REQUIRED");
+    expect(
+      ApiErrorResponse.parse({
+        data: null,
+        meta: { requestId: "req_123" },
+        error: { code: "PRODUCT_ACCESS_REQUIRED", message: "Brak dostępu", details: [] },
+      }).error.code,
+    ).toBe("PRODUCT_ACCESS_REQUIRED");
+
+    const healthEnvelope = apiSuccessSchema(Health).parse({
+      data: { status: "ok", version: "0.0.0" },
+      meta: { requestId: "req_123" },
+      error: null,
+    });
+    expect(healthEnvelope.data.status).toBe("ok");
   });
 });

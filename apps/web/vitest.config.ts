@@ -11,8 +11,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    // Klucz „Core” do podpisywania tokenów w testach (TIMOTIME_CORE_JWKS)
-    setupFiles: ["./test/setup.ts"],
     env: {
       // Prawdziwy PostgreSQL (pnpm db:up && pnpm db:migrate albo usługa w CI), rola aplikacji z RLS
       DATABASE_URL:

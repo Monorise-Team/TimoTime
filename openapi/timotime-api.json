@@ -1,0 +1,1256 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TimoTime API",
+    "version": "0.0.0",
+    "summary": "API ewidencji czasu pracy TimoTime: rejestracja własnego czasu pracy, widok zespołu i stan usługi.",
+    "description": "Opis API TimoTime (`/api/v1/*`) wygenerowany automatycznie z kodu (katalog ścieżek i schematy Zod). Wszystkie odpowiedzi ustawiają nagłówek `Cache-Control: no-store` i używają koperty `{ data, meta, error }` (ADR-0044). Tożsamość osoby i firmy zawsze wynika z tokenu albo sesji MonoriseCore (ADR-0037). Trasy `entries` są zapytaniami zakresowymi po przedziale dat [from, to] (maksymalnie 31 dni) i nie używają stronicowania kursorowego.",
+    "license": {
+      "name": "Proprietary, all rights reserved",
+      "identifier": "LicenseRef-Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://time.localhost:3300",
+      "description": "Lokalnie"
+    },
+    {
+      "url": "https://time.monorise.studio",
+      "description": "Produkcja"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System",
+      "description": "Stan usługi TimoTime."
+    },
+    {
+      "name": "Session",
+      "description": "Dane zalogowanej osoby, firmy i możliwości widoczne w przeglądarce (BFF)."
+    },
+    {
+      "name": "Time",
+      "description": "Rejestracja i odczyt własnych wpisów czasu pracy."
+    },
+    {
+      "name": "Team",
+      "description": "Widok kierownika: bieżący status i wpisy zespołu w zakresie uprawnień."
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "operationId": "getHealth",
+        "summary": "Stan usługi TimoTime",
+        "description": "Publiczna kontrola zdrowia serwera API bez sprawdzania bazy danych i MonoriseCore.",
+        "responses": {
+          "200": {
+            "description": "Usługa działa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "operationId": "getMe",
+        "summary": "Zalogowana osoba, firma i możliwości w TimoTime",
+        "description": "Zwraca profil osoby i firmy pobrany z MonoriseCore (`GET /core/v1/me`) oraz pole `capabilities` wyliczone z migawki uprawnień produktu `timotime`. Dostępne wyłącznie przez sesję BFF przeglądarki (ciasteczko); aplikacja mobilna z tokenem Bearer otrzymuje `403 PERMISSION_DENIED`, bo pobiera profil bezpośrednio z Core API.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil zalogowanej osoby, firma i możliwości w interfejsie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/team/current": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "operationId": "getTeamCurrentEntries",
+        "summary": "Kto z zespołu aktualnie pracuje",
+        "description": "Bieżący stan otwartych wpisów pracowników objętych zakresem uprawnienia `timotime.entries.read` (`ORGANIZATION` albo poddrzewo jednostek `UNIT`; zapytanie nie jest stronicowane kursorowo). Dane pracownika pochodzą z Core Directory, a baza wymusza separację firmy przez RLS (`withTeamScope`).",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista aktualnie otwartych wpisów pracowników w zakresie kierownika.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamCurrentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PRODUCT_ACCESS_REQUIRED, PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/team/entries": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "operationId": "listTeamTimeEntries",
+        "summary": "Wpisy czasu pracy zespołu w przedziale dat",
+        "description": "Zapytanie zakresowe (bez stronicowania kursorowego): zwraca wpisy czasu pracy pracowników z zakresu uprawnienia `timotime.entries.read` nakładające się na przedział [from, to] (maksymalnie 31 dni, domyślnie dzisiejszy dzień w UTC), łącznie ze zmianami nocnymi i wpisami otwartymi. Wymaga dostępu do produktu `timotime` i uprawnienia `timotime.entries.read`.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Początek przedziału dat w formacie ISO 8601 (YYYY-MM-DD lub pełny znacznik czasu UTC). Domyślnie początek dzisiejszego dnia w UTC; maksymalna rozpiętość przedziału to 31 dni.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Koniec przedziału dat w formacie ISO 8601 (YYYY-MM-DD lub pełny znacznik czasu UTC). Domyślnie koniec dzisiejszego dnia w UTC; data końcowa nie może być wcześniejsza niż początkowa.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wpisy czasu pracy zespołu oraz wyliczone granice przedziału [from, to].",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamTimeEntriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PRODUCT_ACCESS_REQUIRED, PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Błędne dane wejściowe (VALIDATION_FAILED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time/current": {
+      "get": {
+        "tags": [
+          "Time"
+        ],
+        "operationId": "getCurrentTimeEntry",
+        "summary": "Bieżący otwarty wpis czasu pracy",
+        "description": "Zwraca aktualnie otwarty wpis zalogowanej osoby (`endedAt: null`) albo `null`. Wymaga aktywnego dostępu do produktu `timotime` i uprawnienia `timotime.entries.read_own`.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Otwarty wpis czasu pracy albo null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentTimeEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PRODUCT_ACCESS_REQUIRED, PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time/entries": {
+      "get": {
+        "tags": [
+          "Time"
+        ],
+        "operationId": "listTimeEntries",
+        "summary": "Własne wpisy czasu pracy w przedziale dat",
+        "description": "Zapytanie zakresowe (bez stronicowania kursorowego): zwraca wszystkie własne wpisy nakładające się na przedział [from, to] (maksymalnie 31 dni, domyślnie dzisiejszy dzień w UTC), łącznie ze zmianami nocnymi i wpisami nadal otwartymi. Wymaga dostępu do produktu `timotime` i uprawnienia `timotime.entries.read_own`.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Początek przedziału dat w formacie ISO 8601 (YYYY-MM-DD lub pełny znacznik czasu UTC). Domyślnie początek dzisiejszego dnia w UTC; maksymalna rozpiętość przedziału to 31 dni.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Koniec przedziału dat w formacie ISO 8601 (YYYY-MM-DD lub pełny znacznik czasu UTC). Domyślnie koniec dzisiejszego dnia w UTC; data końcowa nie może być wcześniejsza niż początkowa.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Własne wpisy czasu pracy oraz wyliczone granice przedziału [from, to].",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeEntriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PRODUCT_ACCESS_REQUIRED, PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Błędne dane wejściowe (VALIDATION_FAILED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time/start": {
+      "post": {
+        "tags": [
+          "Time"
+        ],
+        "operationId": "startTimeEntry",
+        "summary": "Rozpoczęcie nowego wpisu czasu pracy",
+        "description": "Otwiera nowy wpis czasu pracy wybranego rodzaju (`WORK`, `BREAK`, `REMOTE`, `BUSINESS_TRIP`). Jeśli osoba ma już otwarty wpis, najpierw zamyka go w tej samej transakcji. Równoczesne wywołania startu bez otwartego wpisu zwracają `409 CONFLICT`. Wymaga dostępu do produktu `timotime` i uprawnienia `timotime.entries.write_own`.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Rodzaj nowego wpisu oraz opcjonalna notatka (do 500 znaków).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTimeEntryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utworzony, otwarty wpis czasu pracy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PRODUCT_ACCESS_REQUIRED, PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflikt stanu wpisu czasu pracy (CONFLICT).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Błędne dane wejściowe (VALIDATION_FAILED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time/stop": {
+      "post": {
+        "tags": [
+          "Time"
+        ],
+        "operationId": "stopTimeEntry",
+        "summary": "Zakończenie bieżącego wpisu czasu pracy",
+        "description": "Zamyka bieżący otwarty wpis zalogowanej osoby. Jeśli brak otwartego wpisu, zwraca `409 CONFLICT`. Treść żądania jest opcjonalna (puste ciało lub `{}`). Wymaga dostępu do produktu `timotime` i uprawnienia `timotime.entries.write_own`.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Opcjonalna notatka nadpisująca notatkę zamykanego wpisu (do 500 znaków).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopTimeEntryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zamknięty wpis czasu pracy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Brak albo nieważny token dostępu albo wygasła sesja (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Brak dostępu do produktu albo brak uprawnienia (PRODUCT_ACCESS_REQUIRED, PERMISSION_DENIED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflikt stanu wpisu czasu pracy (CONFLICT).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Błędne dane wejściowe (VALIDATION_FAILED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token dostępu użytkownika JWT (EdDSA) z auth.monorise.studio z odbiorcą API TimoTime (aplikacja mobilna, ADR-0023)."
+      },
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-monorise-session",
+        "description": "Sesja BFF przeglądarki w ciasteczku HttpOnly (__Host-monorise-session w produkcji, monorise-session na http://localhost; ADR-0050). Żądania mutujące wymagają zgodnego nagłówka Origin."
+      }
+    },
+    "schemas": {
+      "ApiErrorBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ]
+      },
+      "ApiErrorDetail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "null"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorBody"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "ApiMeta": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ]
+      },
+      "Capabilities": {
+        "type": "object",
+        "properties": {
+          "trackOwnTime": {
+            "type": "boolean"
+          },
+          "viewTeam": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "trackOwnTime",
+          "viewTeam"
+        ]
+      },
+      "CurrentTimeEntry": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/TimeEntry"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "CurrentTimeEntryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CurrentTimeEntry"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "UNAUTHENTICATED",
+          "PERMISSION_DENIED",
+          "PRODUCT_ACCESS_REQUIRED",
+          "NOT_FOUND",
+          "VALIDATION_FAILED",
+          "CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Health"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "email"
+            ]
+          },
+          "employee": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              },
+              "jobTitle": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName",
+              "fullName",
+              "jobTitle"
+            ]
+          },
+          "organization": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          }
+        },
+        "required": [
+          "account",
+          "employee",
+          "organization",
+          "capabilities"
+        ]
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Me"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "StartTimeEntryInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/TimeEntryKind"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "StopTimeEntryInput": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "TeamCurrentList": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamTimeEntry"
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ]
+      },
+      "TeamCurrentListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TeamCurrentList"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "TeamEmployee": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "TeamTimeEntriesList": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamTimeEntry"
+            }
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "from",
+          "to"
+        ]
+      },
+      "TeamTimeEntriesListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TeamTimeEntriesList"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "TeamTimeEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TimeEntryKind"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "endedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "employee": {
+            "$ref": "#/components/schemas/TeamEmployee"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "accountId",
+          "employeeId",
+          "kind",
+          "startedAt",
+          "endedAt",
+          "note",
+          "createdAt",
+          "updatedAt",
+          "employee"
+        ]
+      },
+      "TimeEntriesList": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeEntry"
+            }
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "from",
+          "to"
+        ]
+      },
+      "TimeEntriesListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TimeEntriesList"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      },
+      "TimeEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TimeEntryKind"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "endedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "accountId",
+          "employeeId",
+          "kind",
+          "startedAt",
+          "endedAt",
+          "note",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TimeEntryKind": {
+        "type": "string",
+        "enum": [
+          "WORK",
+          "BREAK",
+          "REMOTE",
+          "BUSINESS_TRIP"
+        ]
+      },
+      "TimeEntryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TimeEntry"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          },
+          "error": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "error"
+        ]
+      }
+    }
+  }
+}

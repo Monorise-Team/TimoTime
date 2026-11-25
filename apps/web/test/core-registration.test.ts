@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createFakeCore } from "@monorise-team/testing";
 import { TIMOTIME_PERMISSION_MANIFEST, TIMOTIME_ROLE_TEMPLATES } from "@timotime/contracts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -274,5 +275,26 @@ describe("rejestracja uprawnień i gotowych ról w MonoriseCore", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("rejestruje manifest i gotowe role idempotentnie w atrapie MonoriseCore (createFakeCore)", async () => {
+    const fakeCore = await createFakeCore({
+      issuer: "http://core-auth.test",
+      coreApiUrl: "http://core-api.test",
+      products: [{ key: "timotime", clientId: BASE_CONFIG.clientId, clientSecret: BASE_CONFIG.clientSecret }],
+    });
+
+    const first = await registerWithCore({ ...BASE_CONFIG, fetch: fakeCore.fetch });
+    expect(first.permissions.added).toHaveLength(TIMOTIME_PERMISSION_MANIFEST.length);
+    expect(first.permissions.unchanged).toBe(0);
+    expect(first.roleTemplates.added).toEqual(["timotime.employee", "timotime.manager"]);
+    expect(fakeCore.registrations.permissions).toHaveLength(1);
+    expect(fakeCore.registrations.roleTemplates).toHaveLength(1);
+
+    const second = await registerWithCore({ ...BASE_CONFIG, fetch: fakeCore.fetch });
+    expect(second.permissions.added).toEqual([]);
+    expect(second.permissions.unchanged).toBe(TIMOTIME_PERMISSION_MANIFEST.length);
+    expect(second.roleTemplates.added).toEqual([]);
+    expect(second.roleTemplates.unchanged).toBe(TIMOTIME_ROLE_TEMPLATES.length);
   });
 });

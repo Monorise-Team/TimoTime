@@ -11,13 +11,15 @@
     "lint": "eslint --max-warnings=0 .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "openapi": "pnpm --filter @timotime/contracts build && node scripts/generate-openapi.mjs",
+    "openapi:check": "pnpm --filter @timotime/contracts build && node scripts/generate-openapi.mjs --check",
     "permissions:register": "pnpm --filter @timotime/contracts build && node scripts/register-permissions.mjs"
   },
   "dependencies": {
-    "@monorise-team/auth": "0.0.1-dev.7",
-    "@monorise-team/permissions": "0.0.1-dev.7",
-    "@monorise-team/sdk": "0.0.1-dev.7",
-    "@monorise-team/ui": "0.0.1-dev.7",
+    "@monorise-team/auth": "0.0.1-dev.8",
+    "@monorise-team/permissions": "0.0.1-dev.8",
+    "@monorise-team/sdk": "0.0.1-dev.8",
+    "@monorise-team/ui": "0.0.1-dev.8",
     "@timotime/client": "workspace:*",
     "@timotime/contracts": "workspace:*",
     "@timotime/db": "workspace:*",
@@ -30,7 +32,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@monorise-team/config": "0.0.1-dev.7",
+    "@monorise-team/config": "0.0.1-dev.8",
+    "@monorise-team/testing": "0.0.1-dev.8",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^24.10.0",
     "@types/react": "^19.3.0",
