@@ -71,6 +71,7 @@ Gdy w MonoriseCore zmienią się uprawnienia lub dostęp osoby, Core zapisuje nu
 - interwał odpytywania ustawia zmienna `TIMOTIME_EVENT_FEED_INTERVAL_MS` w milisekundach (domyślnie `5000` przy `NODE_ENV=development`, w pozostałych środowiskach `0`, czyli wyłączone; `0` albo niepoprawna wartość również wyłącza odpytywanie),
 - przy starcie serwera Node.js odpytywanie uruchamia `apps/web/src/instrumentation.ts`,
 - stan kanału trzymają dwie tabele w schemacie `public` bez RLS (nie zawierają danych osób ani firm): `event_feed_cursors` (ostatni przetworzony numer `sequence` dla kanału `core`) oraz `processed_events` (deduplikacja przetworzonych zdarzeń).
+- ograniczenie: pamięć uprawnień jest w pamięci procesu, a kursor i przetworzone zdarzenia są wspólne w bazie, więc przy kilku instancjach serwera zdarzenie wyczyści pamięć tylko w tej, która je pobrała (pozostałe odświeżą migawkę najpóźniej po 5 minutach albo od razu przy wyższym `authz_rev` w tokenie). Dziś TimoTime działa jako jeden proces; przed skalowaniem potrzebna jest wspólna pamięć podręczna albo kursor na instancję.
 
 ### Czego potrzebuje osoba, aby korzystać z TimoTime
 
