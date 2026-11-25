@@ -20,6 +20,12 @@ import * as entries from "@/app/api/v1/time/entries/route";
 import * as start from "@/app/api/v1/time/start/route";
 import * as stop from "@/app/api/v1/time/stop/route";
 import { resetMachineCoreTokenCache } from "@/server/core";
+import {
+  CORE_DIRECTORY_READ_SCOPE,
+  CORE_EVENTS_READ_SCOPE,
+  CORE_PERMISSIONS_READ_SCOPE,
+  CORE_PERMISSIONS_REGISTER_SCOPE,
+} from "@/server/core-machine";
 import { buildOpenApiDocument, serializeOpenApiDocument } from "@/server/openapi";
 import { invalidatePermissionCache } from "@/server/permissions";
 import { ROUTE_LIST } from "@/server/routes";
@@ -105,7 +111,19 @@ beforeAll(async () => {
   fakeCore = await createFakeCore({
     issuer: FAKE_CORE_URL,
     coreApiUrl: FAKE_CORE_URL,
-    products: [{ key: "timotime", clientId: CLIENT_ID, clientSecret: CLIENT_SECRET }],
+    products: [
+      {
+        key: "timotime",
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        scopes: [
+          CORE_PERMISSIONS_REGISTER_SCOPE,
+          CORE_PERMISSIONS_READ_SCOPE,
+          CORE_DIRECTORY_READ_SCOPE,
+          CORE_EVENTS_READ_SCOPE,
+        ],
+      },
+    ],
   });
   process.env.CORE_AUTH_URL = FAKE_CORE_URL;
   process.env.CORE_API_URL = FAKE_CORE_URL;

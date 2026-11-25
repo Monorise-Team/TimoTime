@@ -63,6 +63,15 @@ Migawki trzyma jedna pamięć podręczna `createPermissionCache` z `@monorise-te
 - własne wpisy wymagają `timotime.entries.read_own` (odczyt) oraz `timotime.entries.write_own` (start i stop),
 - `GET /api/v1/me` (przeglądarka BFF) zwraca dodatkowo `capabilities: { trackOwnTime, viewTeam }`, na podstawie których interfejs pokazuje albo ukrywa zakładkę „Zespół”.
 
+### Odświeżanie uprawnień po zdarzeniach z Core
+
+Gdy w MonoriseCore zmienią się uprawnienia lub dostęp osoby, Core zapisuje numerowane zdarzenie `organization.permissions.changed` w kanale HTTP produktu (`GET /core/v1/products/timotime/events`). Serwer TimoTime pobiera te zdarzenia przez `@monorise-team/sdk` (token maszynowy z zakresem `core:events.read`) i przetwarza je przez `@monorise-team/events`:
+
+- po odebraniu `organization.permissions.changed` natychmiast czyści pamięć podręczną uprawnień dla wskazanej firmy i konta,
+- interwał odpytywania ustawia zmienna `TIMOTIME_EVENT_FEED_INTERVAL_MS` w milisekundach (domyślnie `5000` przy `NODE_ENV=development`, w pozostałych środowiskach `0`, czyli wyłączone; `0` albo niepoprawna wartość również wyłącza odpytywanie),
+- przy starcie serwera Node.js odpytywanie uruchamia `apps/web/src/instrumentation.ts`,
+- stan kanału trzymają dwie tabele w schemacie `public` bez RLS (nie zawierają danych osób ani firm): `event_feed_cursors` (ostatni przetworzony numer `sequence` dla kanału `core`) oraz `processed_events` (deduplikacja przetworzonych zdarzeń).
+
 ### Czego potrzebuje osoba, aby korzystać z TimoTime
 
 1. **Dostęp firmy do produktu (`Entitlement`)**: firma musi mieć aktywny dostęp do produktu `timotime` w MonoriseCore.
