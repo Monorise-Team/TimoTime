@@ -22,7 +22,7 @@
     "@timotime/contracts": "workspace:*"
   },
   "devDependencies": {
-    "@monorise-team/config": "0.0.1-dev.18",
+    "@monorise-team/config": "0.0.1-dev.20",
     "eslint": "^10.15.0",
     "typescript": "^6.0.3",
     "vitest": "^5.1.1"
