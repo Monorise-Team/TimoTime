@@ -214,8 +214,10 @@ function mockBrowserSession(
       requestedResources.push(resource);
       return coreAccessToken;
     },
+    // Sesja w bazie (tryb store) nigdy nie zwraca ciasteczek do zapisania
+    setCookies: [],
   };
-  const authenticated: Authenticated = { context, via: "session", session };
+  const authenticated: Authenticated = { context, via: "session", session, setCookies: [] };
   vi.spyOn(getAuth(), "authenticate").mockResolvedValue(authenticated);
   return { requestedResources };
 }
