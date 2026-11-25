@@ -46,7 +46,7 @@ export function invalidatePermissionCache(filter?: PermissionCacheFilter): void 
 
 function assertProductAccess(snapshot: PermissionSnapshot): void {
   if (!snapshot.products.includes(TIMOTIME_PERMISSIONS.product)) {
-    throw new ApiFailure(403, "PERMISSION_DENIED", PRODUCT_ACCESS_REQUIRED_MESSAGE);
+    throw new ApiFailure(403, "PRODUCT_ACCESS_REQUIRED", PRODUCT_ACCESS_REQUIRED_MESSAGE);
   }
 }
 
@@ -87,7 +87,7 @@ export async function assertTimePermission(
 
 /**
  * Zwraca efektywny zakres uprawnienia `timotime.entries.read` dla widoku kierownika (`ORGANIZATION` albo `LIMITED`).
- * Brak produktu albo zakres `NONE` kończy się błędem 403 `PERMISSION_DENIED`.
+ * Brak produktu daje 403 `PRODUCT_ACCESS_REQUIRED`, a zakres `NONE` daje 403 `PERMISSION_DENIED`.
  */
 export async function assertTeamReadScope(caller: Caller): Promise<Exclude<AccessScope, { type: "NONE" }>> {
   const snapshot = await getPermissionSnapshot(caller);

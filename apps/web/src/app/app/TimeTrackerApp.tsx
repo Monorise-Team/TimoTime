@@ -49,6 +49,13 @@ function readClock(): number {
 
 const DEFAULT_NO_ACCESS_MESSAGE = "TimoTime nie jest włączony dla Twojego konta. Poproś Ownera firmy o dostęp.";
 
+function isAccessDeniedError(error: unknown): error is ApiError {
+  return (
+    error instanceof ApiError &&
+    (error.code === "PRODUCT_ACCESS_REQUIRED" || error.code === "PERMISSION_DENIED" || error.status === 403)
+  );
+}
+
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   expired: "Sesja logowania wygasła. Spróbuj zalogować się ponownie.",
   denied: "Logowanie zostało przerwane.",
@@ -102,7 +109,7 @@ function TimeTrackerContent() {
         try {
           await client.time.current();
         } catch (error) {
-          if (error instanceof ApiError && error.status === 403) {
+          if (isAccessDeniedError(error)) {
             deniedMessage = error.message;
           } else {
             throw error;
@@ -133,7 +140,7 @@ function TimeTrackerContent() {
         weekEntries: weekList.entries,
       };
     } catch (error) {
-      if (error instanceof ApiError && error.status === 403) {
+      if (isAccessDeniedError(error)) {
         return {
           profile,
           deniedMessage: error.message,
@@ -236,7 +243,7 @@ function TimeTrackerContent() {
         setAuthState("signed-out");
         return;
       }
-      if (error instanceof ApiError && error.status === 403) {
+      if (isAccessDeniedError(error)) {
         setAccessDeniedMessage(error.message);
         return;
       }
@@ -258,7 +265,7 @@ function TimeTrackerContent() {
         setAuthState("signed-out");
         return;
       }
-      if (error instanceof ApiError && error.status === 403) {
+      if (isAccessDeniedError(error)) {
         setAccessDeniedMessage(error.message);
         return;
       }

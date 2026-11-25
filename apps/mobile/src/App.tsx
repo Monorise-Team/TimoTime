@@ -70,6 +70,10 @@ const durationWithinDayMs = (entry: TimeEntry, nowMs: number, dayStartMs: number
 const formatError = (error: unknown) =>
   error instanceof ApiError ? error.message : "Brak połączenia z serwerem TimoTime. Sprawdź adres i sieć.";
 
+const isAccessDeniedError = (error: unknown): error is ApiError =>
+  error instanceof ApiError &&
+  (error.code === "PRODUCT_ACCESS_REQUIRED" || error.code === "PERMISSION_DENIED" || error.status === 403);
+
 const profileHeader = (me: CoreMe): string => {
   const fullName = `${me.employee.firstName} ${me.employee.lastName}`.trim() || me.account.email;
   return `${fullName} · ${me.organization.name}`;
@@ -181,7 +185,7 @@ function Tracker({
       setEntries(data.entries);
       setNowMs(readClock());
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) {
+      if (isAccessDeniedError(e)) {
         setAccessDeniedMessage(e.message);
       } else {
         setError(formatError(e));
@@ -211,7 +215,7 @@ function Tracker({
       },
       (e: unknown) => {
         if (cancelled) return;
-        if (e instanceof ApiError && e.status === 403) {
+        if (isAccessDeniedError(e)) {
           setAccessDeniedMessage(e.message);
         } else {
           setError(formatError(e));
@@ -238,7 +242,7 @@ function Tracker({
       setNowMs(readClock());
       await load();
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) {
+      if (isAccessDeniedError(e)) {
         setAccessDeniedMessage(e.message);
       } else {
         setError(formatError(e));
@@ -256,7 +260,7 @@ function Tracker({
       setNowMs(readClock());
       await load();
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) {
+      if (isAccessDeniedError(e)) {
         setAccessDeniedMessage(e.message);
       } else {
         setError(formatError(e));

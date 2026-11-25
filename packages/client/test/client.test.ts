@@ -51,6 +51,21 @@ describe("klient API TimoTime", () => {
     const error = await client.time.stop().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ code: "CONFLICT", status: 409 });
+
+    const productDeniedClient = createClient({
+      fetch: fakeFetch(403, {
+        data: null,
+        meta: { requestId: "req_123" },
+        error: {
+          code: "PRODUCT_ACCESS_REQUIRED",
+          message: "TimoTime nie jest włączony dla Twojego konta. Poproś Ownera firmy o dostęp.",
+          details: [],
+        },
+      }),
+    });
+    const denied = await productDeniedClient.time.current().catch((e: unknown) => e);
+    expect(denied).toBeInstanceOf(ApiError);
+    expect(denied).toMatchObject({ code: "PRODUCT_ACCESS_REQUIRED", status: 403 });
   });
 
   it("pobiera bieżący status i wpisy zespołu", async () => {

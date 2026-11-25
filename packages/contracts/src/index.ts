@@ -11,25 +11,66 @@ export const API_PREFIX = "/api/v1";
 export const ERROR_CODES = [
   "UNAUTHENTICATED",
   "PERMISSION_DENIED",
+  "PRODUCT_ACCESS_REQUIRED",
   "NOT_FOUND",
   "VALIDATION_FAILED",
   "CONFLICT",
   "RATE_LIMITED",
   "INTERNAL",
 ] as const;
+export const ErrorCode = z.enum(ERROR_CODES);
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-export interface ApiErrorBody {
-  code: ErrorCode;
-  message: string;
-  details: { field?: string; message: string }[];
+export const ApiErrorDetail = z.object({
+  field: z.string().optional(),
+  message: z.string(),
+});
+export type ApiErrorDetail = z.infer<typeof ApiErrorDetail>;
+
+export const ApiErrorBody = z.object({
+  code: ErrorCode,
+  message: z.string(),
+  details: z.array(ApiErrorDetail),
+});
+export type ApiErrorBody = z.infer<typeof ApiErrorBody>;
+
+export const ApiMeta = z.object({
+  requestId: z.string(),
+});
+export type ApiMeta = z.infer<typeof ApiMeta>;
+
+/** Koperta udanej odpowiedzi API TimoTime: `{ data, meta, error: null }` (ADR-0044). */
+export function apiSuccessSchema<T extends z.ZodType>(data: T) {
+  return z.object({
+    data,
+    meta: ApiMeta,
+    error: z.null(),
+  });
 }
+
+/** Koperta odpowiedzi błędu API TimoTime: `{ data: null, meta, error }` (ADR-0044). */
+export function apiErrorSchema<T extends z.ZodType = typeof ApiErrorBody>(error?: T) {
+  return z.object({
+    data: z.null(),
+    meta: ApiMeta,
+    error: (error ?? ApiErrorBody) as T,
+  });
+}
+
+export const ApiErrorResponse = apiErrorSchema();
+export type ApiErrorResponse = z.infer<typeof ApiErrorResponse>;
 
 export interface ApiResponse<T> {
   data: T | null;
   meta: { requestId?: string; [key: string]: unknown };
   error: ApiErrorBody | null;
 }
+
+export const Health = z.object({
+  status: z.literal("ok"),
+  version: z.string().nullable(),
+});
+export type Health = z.infer<typeof Health>;
 
 // ── Zalogowana osoba i firma (z MonoriseCore) ───────────────────────────────
 
