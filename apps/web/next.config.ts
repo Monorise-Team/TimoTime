@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pg"],
   experimental: { globalNotFound: true },
   poweredByHeader: false,
+  // Znaczek trybu deweloperskiego w prawym dolnym rogu, żeby nie zasłaniał przycisku zwijania paska bocznego
+  devIndicators: { position: "bottom-right" },
   async headers() {
     return [
       {
