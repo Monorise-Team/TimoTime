@@ -63,6 +63,8 @@ Migawki trzyma jedna pamięć podręczna `createPermissionCache` z `@monorise-te
 - własne wpisy wymagają `timotime.entries.read_own` (odczyt) oraz `timotime.entries.write_own` (start i stop),
 - `GET /api/v1/me` (przeglądarka BFF) zwraca dodatkowo `capabilities: { trackOwnTime, viewTeam }`, na podstawie których interfejs pokazuje albo ukrywa zakładkę „Zespół”.
 
+Oba klienty Core API (`createUserCoreClient` i `getMachineCoreClient` w `apps/web/src/server/core.ts`) ponawiają żądania przy krótkich błędach sieci oraz odpowiedziach `429`, `502`, `503` i `504` (domyślnie do 3 prób z odstępem 200 ms do 2000 ms i z uwzględnieniem nagłówka `Retry-After`). Przy dłuższej awarii MonoriseCore sprawdzanie uprawnień nie podaje przestarzałej migawki z pamięci podręcznej, lecz bezpiecznie odmawia dostępu błędem `503` („MonoriseCore jest chwilowo niedostępny”).
+
 ### Odświeżanie uprawnień po zdarzeniach z Core
 
 Gdy w MonoriseCore zmienią się uprawnienia lub dostęp osoby, Core zapisuje numerowane zdarzenie `organization.permissions.changed` w kanale HTTP produktu (`GET /core/v1/products/timotime/events`). Serwer TimoTime pobiera te zdarzenia przez `@monorise-team/sdk` (token maszynowy z zakresem `core:events.read`) i przetwarza je przez `@monorise-team/events`:
