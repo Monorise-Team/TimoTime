@@ -81,8 +81,8 @@ Ewidencja czasu pracy Monorise w przeglądarce i na telefonie (ADR-0095). Logowa
 
 1. **Osoba, pracownik i firma tylko z tokenu albo sesji** (`requireUser` w `apps/web/src/server/auth.ts`), nigdy z treści żądania ani adresu (ADR-0037). TimoTime nie ma własnych kont.
 2. **Dane osób i firm tylko przez `withUser` i `withTeamScope`** z `@timotime/db`: `withUser` ustawia `app.organization_id` i `app.account_id` (własne wpisy, odczyt i zapis), a `withTeamScope` dodaje zakres odczytu zespołu (`app.team_scope` / `app.team_employee_ids`, tylko `SELECT`; zapisy nadal wyłącznie dla właściciela). Każda nowa tabela z danymi osób albo firm dostaje w migracji RLS (`ENABLE` + `FORCE`) i test izolacji.
-3. **API** w formacie `{ data, meta, error }` ze stałymi kodami błędów (`packages/contracts`); każda trasa przez `route()` z `apps/web/src/server/api.ts` (CSRF dla ciasteczka, CORS, mapowanie błędów zod, `@monorise-team/auth`, `@monorise-team/permissions` i `@monorise-team/sdk`).
-4. **Komunikacja z MonoriseCore tylko przez `@monorise-team/sdk`** (`apps/web/src/server/core.ts`, w tym klient maszynowy z tokenem z `apps/web/src/server/core-machine.ts`), bez ręcznego `fetch` do Core API (wyjątek: rejestracja uprawnień i ról w `apps/web/src/server/core-registration.ts`).
+3. **API** w formacie `{ data, meta, error }` ze stałymi kodami błędów (`packages/contracts`, w tym `PRODUCT_ACCESS_REQUIRED` dla braku dostępu do produktu i `PERMISSION_DENIED` dla braku uprawnienia); każda trasa przez `route()` z `apps/web/src/server/api.ts` i opisana w katalogu `apps/web/src/server/routes.ts` (`openapi/timotime-api.json` generowany przez `pnpm openapi`, weryfikowany w `pnpm openapi:check`).
+4. **Komunikacja z MonoriseCore tylko przez `@monorise-team/sdk`** (`apps/web/src/server/core.ts`, w tym klient maszynowy z tokenem z `apps/web/src/server/core-machine.ts`), bez ręcznego `fetch` do Core API (wyjątek: rejestracja uprawnień i ról w `apps/web/src/server/core-registration.ts`). W testach używaj `createFakeCore`, `defineProductContractTests` i `checkTenantIsolation` z `@monorise-team/testing`.
 5. **Uprawnienia i gotowe role deklarowane w kodzie** w `packages/contracts/src/permissions.ts` (`definePermissions("timotime", ...)` i `TIMOTIME_ROLE_TEMPLATES`), rejestrowane w Core przez `pnpm permissions:register`. Sprawdzanie wyłącznie w `apps/web/src/server/permissions.ts` przez `createPermissionCache`, `can()` i `scopeOf()` z `@monorise-team/permissions` na migawce z Core (`authz_rev` z tokenu).
 6. **Wygląd** tylko z `@monorise-team/ui` i tokenów `@monorise-team/tokens` (ADR-0091), bez kolorów wpisywanych na sztywno.
 7. **Jedna wersja**: po zmianie zależności `@monorise-team/*` używaj `pnpm shared:update`; `pnpm check:versions` musi przechodzić.
@@ -98,6 +98,7 @@ Ewidencja czasu pracy Monorise w przeglądarce i na telefonie (ADR-0095). Logowa
 ```bash
 pnpm install && pnpm setup:env && pnpm db:up && pnpm db:migrate
 pnpm permissions:register # rejestracja manifestu uprawnień i gotowych ról w MonoriseCore
+pnpm openapi             # generowanie openapi/timotime-api.json z kodu (`pnpm openapi:check` w CI)
 pnpm dev                 # time.localhost:3300 i timo-time.localhost:3300 (logowanie: MonoriseCore na localhost:3100)
 pnpm dev:mobile          # Expo (łączy się z http://127.0.0.1:3300)
 pnpm check               # obowiązkowo przed pull requestem (wymaga pnpm db:up)
