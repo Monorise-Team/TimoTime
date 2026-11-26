@@ -19,11 +19,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@monorise-team/permissions": "0.0.1-dev.24",
+    "@monorise-team/permissions": "0.0.1-dev.25",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@monorise-team/config": "0.0.1-dev.24",
+    "@monorise-team/config": "0.0.1-dev.25",
     "eslint": "^10.15.0",
     "typescript": "^6.0.3",
     "vitest": "^5.1.1"
