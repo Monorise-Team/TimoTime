@@ -29,7 +29,7 @@ Szczegóły: [zasady współpracy](https://github.com/Monorise-Team/.github/blob
 ### Zanim uznasz zadanie za gotowe
 
 - README (repozytorium i zmienionej paczki) oraz część o repozytorium w `AGENTS.md` opisują nowy stan.
-- Zgłoszenie ma typ (`✨ Feature`, `🐛 Bug`, `♻️ Refactor`, `⚡ Performance`, `🔧 Chore`, `📚 Docs`, `🧪 Test`, `🔒 Security`, `🔍 Spike`), pola (`Priority`, `Effort`, `Start date`, `Target date`), relacje („Blocked by”, podzadania), milestone, kartę, gałąź rozwojową i etykiety `area:` (brakujący obszar dopisz w `labels/repos.json` w Monorise-Team/.github). Pull request ma etykiety `area:` ze zgłoszenia, milestone i `Closes #<numer>`. Nie używamy etykiet `type:`, `prio:` ani `meta:`. Braki uzupełnia `node scripts/repo-setup.mjs meta` w Monorise-Team/.github.
+- Zgłoszenie ma typ, pola (`Priority`, `Effort`, `Start date`, `Target date`), relacje, milestone, kartę, gałąź rozwojową i etykiety `area:` (nowy obszar dopisz w `labels/repos.json` w Monorise-Team/.github); pull request ma `area:`, milestone i `Closes #<numer>`. Etykiet `type:`, `prio:` i `meta:` nie używamy; braki uzupełnia `node scripts/repo-setup.mjs meta` w Monorise-Team/.github.
 - Opis, strona i tematy repozytorium na GitHubie zgadzają się z `labels/repos.json` w Monorise-Team/.github.
 - Zmiana decyzji, stanu budowy albo otwartych spraw: osobne zgłoszenie i pull request w MonoriseDocumentation.
 - Nowa trwała zasada albo zmiana kierunku trafia do wzorca tych zasad. Nie zostawiaj wiedzy tylko w rozmowie.
@@ -55,7 +55,7 @@ Nazwę i przeznaczenie ustala właściciel. Potem: wpis w `labels/repos.json` w 
 
 ### Kierunek
 
-Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (sesja BFF w bazie albo w zaszyfrowanym ciasteczku, ADR-0098), `permissions`, `events` (także pobieranie kanału zdarzeń Core), `sdk` i `testing`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, zaproszenia, dostęp do aplikacji, migawkę uprawnień, dziennik i kanał zdarzeń dla produktów (ADR-0100, do czasu EventBridge i SQS). TimoTime czyta uprawnienia z migawki Core, ma widok kierownika i w kilka sekund reaguje na zmiany uprawnień. MonorisePortal (panel firmy) ma firmę, pracowników i zaproszenia, strukturę, role i dostęp do aplikacji. Portal i TimoTime mają wygląd z `ui` 1:1 z aven-mail. Następny krok: braki Core dla Portalu (dziennik, dezaktywacja, dane firmy) i `Idempotency-Key`. AvenMail czeka.
+Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (ADR-0098), `permissions`, `events`, `sdk` i `testing`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, zaproszenia, dostęp do aplikacji, migawkę uprawnień, dziennik, kanał zdarzeń (ADR-0100), `Idempotency-Key`, edycję i wyłączanie kont oraz dane firmy i domeny (ADR-0101). MonorisePortal (panel firmy) i TimoTime (próba integracji z Core) korzystają z tych bibliotek i wyglądu `ui`. Następny krok: kolejka e-maili w Core, potem stan wysyłki zaproszeń w Portalu. AvenMail czeka.
 
 ### Utrzymanie tych zasad
 
