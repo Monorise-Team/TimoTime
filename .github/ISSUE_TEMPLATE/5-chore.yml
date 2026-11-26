@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: 🔧 Utrzymanie
 description: Zależności, konfiguracja, build, narzędzia, testy, sprzątanie.
-labels:
-  - "type: 🔧 chore"
-  - "meta: ❓ needs triage"
+type: "🔧 Chore"
 projects:
   - Monorise-Team/3
 body:
@@ -11,7 +9,7 @@ body:
     id: kind
     attributes:
       label: Rodzaj
-      description: "Testy dostają przy triage etykietę `type: 🧪 test`."
+      description: "Przy wyborze testów automat zmienia typ zgłoszenia na `🧪 Test`."
       options:
         - Zależności, czyli aktualizacje, usuwanie, poprawki z audytu
         - Build / CI, czyli potoki, skrypty, konfiguracja

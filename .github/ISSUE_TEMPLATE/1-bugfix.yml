@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: 🐛 Zgłoszenie błędu
 description: Coś działa niepoprawnie, wywala się albo zwraca zły wynik.
-labels:
-  - "type: 🐛 bugfix"
-  - "meta: ❓ needs triage"
+type: "🐛 Bug"
 projects:
   - Monorise-Team/3
 body:
