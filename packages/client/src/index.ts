@@ -56,13 +56,13 @@ export function createClient({ baseUrl = "", getToken, fetch: fetchImpl = fetch 
         credentials: getToken ? "omit" : "same-origin",
       });
     } catch {
-      throw new ApiError(0, { code: "INTERNAL", message: "Brak połączenia z serwerem TimoTime", details: [] });
+      throw new ApiError(0, { code: "INTERNAL_ERROR", message: "Brak połączenia z serwerem TimoTime", details: [] });
     }
     const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
     if (!response.ok || !payload || payload.error) {
       throw new ApiError(
         response.status,
-        payload?.error ?? { code: "INTERNAL", message: `Błąd serwera (${response.status})`, details: [] },
+        payload?.error ?? { code: "INTERNAL_ERROR", message: `Błąd serwera (${response.status})`, details: [] },
       );
     }
     return payload.data as T;

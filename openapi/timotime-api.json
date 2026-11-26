@@ -59,7 +59,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -116,7 +116,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -126,7 +126,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -186,7 +186,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -196,7 +196,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -288,7 +288,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -298,7 +298,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -358,7 +358,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -368,7 +368,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -460,7 +460,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -470,7 +470,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -561,7 +561,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -571,7 +571,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -662,7 +662,7 @@
             }
           },
           "500": {
-            "description": "Wewnętrzny błąd serwera (INTERNAL).",
+            "description": "Wewnętrzny błąd serwera (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -672,7 +672,7 @@
             }
           },
           "503": {
-            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL).",
+            "description": "Usługa zależna (MonoriseCore) chwilowo niedostępna (INTERNAL_ERROR).",
             "content": {
               "application/json": {
                 "schema": {
@@ -821,7 +821,7 @@
           "VALIDATION_FAILED",
           "CONFLICT",
           "RATE_LIMITED",
-          "INTERNAL"
+          "INTERNAL_ERROR"
         ]
       },
       "Health": {

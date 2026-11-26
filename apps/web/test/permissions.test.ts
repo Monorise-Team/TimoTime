@@ -105,7 +105,7 @@ async function coreFetchAdapter(input: string | URL | Request, init?: RequestIni
         JSON.stringify({
           data: null,
           meta: { requestId: "req_500" },
-          error: { code: "INTERNAL", message: "Core failure", details: [] },
+          error: { code: "INTERNAL_ERROR", message: "Core failure", details: [] },
         }),
         { status: 500, headers: { "content-type": "application/json" } },
       );

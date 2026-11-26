@@ -90,7 +90,7 @@ async function coreFetchAdapter(input: string | URL | Request, init?: RequestIni
       JSON.stringify({
         data: null,
         meta: { requestId: "req_core_500" },
-        error: { code: "INTERNAL", message: "Core failure", details: [] },
+        error: { code: "INTERNAL_ERROR", message: "Core failure", details: [] },
       }),
       { status: 500, headers: { "content-type": "application/json" } },
     );
@@ -321,18 +321,18 @@ describe("API: sesja, Core SDK, uprawnienia i walidacja", () => {
     faultPath = "/core/v1/me";
     const failed = await call(me.GET, "/me");
     expect(failed.status).toBe(503);
-    expect(failed.body.error.code).toBe("INTERNAL");
+    expect(failed.body.error.code).toBe("INTERNAL_ERROR");
 
     faultPath = "/core/v1/products/timotime/permission-snapshot";
     const snapFailed = await call(me.GET, "/me");
     expect(snapFailed.status).toBe(503);
-    expect(snapFailed.body.error.code).toBe("INTERNAL");
+    expect(snapFailed.body.error.code).toBe("INTERNAL_ERROR");
 
     faultPath = null;
     process.env.CORE_API_URL = "http://127.0.0.1:1";
     const unavailable = await call(me.GET, "/me");
     expect(unavailable.status).toBe(503);
-    expect(unavailable.body.error.code).toBe("INTERNAL");
+    expect(unavailable.body.error.code).toBe("INTERNAL_ERROR");
   });
 
   it("migawka bez produktu timotime zwraca 403 PRODUCT_ACCESS_REQUIRED z polskim komunikatem na własnych wpisach i widoku zespołu", async () => {

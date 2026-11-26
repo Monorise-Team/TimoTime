@@ -16,7 +16,7 @@ export const ERROR_CODES = [
   "VALIDATION_FAILED",
   "CONFLICT",
   "RATE_LIMITED",
-  "INTERNAL",
+  "INTERNAL_ERROR",
 ] as const;
 export const ErrorCode = z.enum(ERROR_CODES);
 export type ErrorCode = (typeof ERROR_CODES)[number];

@@ -127,7 +127,7 @@ export const ROUTES = {
     responseSchemaName: "HealthResponse",
     responseDescription: "Usługa działa.",
     errors: {
-      500: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
     },
   },
   getMe: {
@@ -150,8 +150,8 @@ export const ROUTES = {
     errors: {
       401: ["UNAUTHENTICATED"],
       403: ["PERMISSION_DENIED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
   getCurrentTimeEntry: {
@@ -173,8 +173,8 @@ export const ROUTES = {
     errors: {
       401: ["UNAUTHENTICATED"],
       403: ["PRODUCT_ACCESS_REQUIRED", "PERMISSION_DENIED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
   startTimeEntry: {
@@ -204,8 +204,8 @@ export const ROUTES = {
       403: ["PRODUCT_ACCESS_REQUIRED", "PERMISSION_DENIED"],
       409: ["CONFLICT"],
       422: ["VALIDATION_FAILED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
   stopTimeEntry: {
@@ -234,8 +234,8 @@ export const ROUTES = {
       403: ["PRODUCT_ACCESS_REQUIRED", "PERMISSION_DENIED"],
       409: ["CONFLICT"],
       422: ["VALIDATION_FAILED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
   listTimeEntries: {
@@ -261,8 +261,8 @@ export const ROUTES = {
       401: ["UNAUTHENTICATED"],
       403: ["PRODUCT_ACCESS_REQUIRED", "PERMISSION_DENIED"],
       422: ["VALIDATION_FAILED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
   getTeamCurrentEntries: {
@@ -285,8 +285,8 @@ export const ROUTES = {
     errors: {
       401: ["UNAUTHENTICATED"],
       403: ["PRODUCT_ACCESS_REQUIRED", "PERMISSION_DENIED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
   listTeamTimeEntries: {
@@ -312,8 +312,8 @@ export const ROUTES = {
       401: ["UNAUTHENTICATED"],
       403: ["PRODUCT_ACCESS_REQUIRED", "PERMISSION_DENIED"],
       422: ["VALIDATION_FAILED"],
-      500: ["INTERNAL"],
-      503: ["INTERNAL"],
+      500: ["INTERNAL_ERROR"],
+      503: ["INTERNAL_ERROR"],
     },
   },
 } as const satisfies Record<string, RouteDefinition>;

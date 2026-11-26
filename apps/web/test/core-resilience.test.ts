@@ -268,7 +268,7 @@ describe("odporność serwera TimoTime na krótkie awarie MonoriseCore", () => {
     const firstFailure = await call(me.GET, "/me");
     const envelopeCheck = await checkErrorEnvelope(firstFailure.clone(), {
       expectedStatus: 503,
-      expectedCode: "INTERNAL",
+      expectedCode: "INTERNAL_ERROR",
     });
     expect(envelopeCheck.passed, envelopeCheck.violations.join("; ")).toBe(true);
     const firstBody = (await firstFailure.json()) as {
@@ -280,7 +280,7 @@ describe("odporność serwera TimoTime na krótkie awarie MonoriseCore", () => {
       data: null,
       meta: { requestId: expect.stringMatching(/^req_/) },
       error: {
-        code: "INTERNAL",
+        code: "INTERNAL_ERROR",
         message: "MonoriseCore jest chwilowo niedostępny",
         details: [],
       },
@@ -302,7 +302,7 @@ describe("odporność serwera TimoTime na krótkie awarie MonoriseCore", () => {
     const failClosed = await call(me.GET, "/me");
     const failClosedCheck = await checkErrorEnvelope(failClosed.clone(), {
       expectedStatus: 503,
-      expectedCode: "INTERNAL",
+      expectedCode: "INTERNAL_ERROR",
     });
     expect(failClosedCheck.passed, failClosedCheck.violations.join("; ")).toBe(true);
     expect(fakeCore.calls("permissionSnapshot")).toBe(1 + FAST_RETRY.attempts);
