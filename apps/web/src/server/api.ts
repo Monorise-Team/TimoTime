@@ -59,13 +59,13 @@ function toFailure(error: unknown): ApiFailure {
     );
   }
   if (error instanceof AuthUnavailableError) {
-    return new ApiFailure(503, "INTERNAL", "Logowanie Monorise jest chwilowo niedostępne");
+    return new ApiFailure(503, "INTERNAL_ERROR", "Logowanie Monorise jest chwilowo niedostępne");
   }
   if (error instanceof PermissionError) {
     return new ApiFailure(403, "PERMISSION_DENIED", "Brak uprawnienia do tej operacji");
   }
   if (error instanceof CoreMachineTokenError) {
-    return new ApiFailure(503, "INTERNAL", "MonoriseCore jest chwilowo niedostępny");
+    return new ApiFailure(503, "INTERNAL_ERROR", "MonoriseCore jest chwilowo niedostępny");
   }
   if (error instanceof CoreApiMissingTokenError) {
     return new ApiFailure(401, "UNAUTHENTICATED", "Zaloguj się kontem Monorise");
@@ -77,12 +77,12 @@ function toFailure(error: unknown): ApiFailure {
     if (error.status === 403) {
       return new ApiFailure(403, "PERMISSION_DENIED", "Brak uprawnień w MonoriseCore");
     }
-    return new ApiFailure(503, "INTERNAL", "MonoriseCore jest chwilowo niedostępny");
+    return new ApiFailure(503, "INTERNAL_ERROR", "MonoriseCore jest chwilowo niedostępny");
   }
   if (error instanceof CoreApiUnavailableError || error instanceof CoreApiProtocolError) {
-    return new ApiFailure(503, "INTERNAL", "MonoriseCore jest chwilowo niedostępny");
+    return new ApiFailure(503, "INTERNAL_ERROR", "MonoriseCore jest chwilowo niedostępny");
   }
-  return new ApiFailure(500, "INTERNAL", "Wewnętrzny błąd serwera");
+  return new ApiFailure(500, "INTERNAL_ERROR", "Wewnętrzny błąd serwera");
 }
 
 export interface CookieJar {

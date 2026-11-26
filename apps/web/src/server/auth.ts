@@ -59,7 +59,7 @@ export async function requireUser(request: Request): Promise<Caller> {
       );
     }
     if (error instanceof AuthUnavailableError) {
-      throw new ApiFailure(503, "INTERNAL", "Logowanie Monorise jest chwilowo niedostępne");
+      throw new ApiFailure(503, "INTERNAL_ERROR", "Logowanie Monorise jest chwilowo niedostępne");
     }
     throw error;
   }
