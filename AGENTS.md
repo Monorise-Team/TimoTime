@@ -55,7 +55,7 @@ Nazwę i przeznaczenie ustala właściciel. Potem: wpis w `labels/repos.json` w 
 
 ### Kierunek
 
-Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (ADR-0098), `permissions`, `events`, `sdk` i `testing`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, zaproszenia, dostęp do aplikacji, migawkę uprawnień, dziennik, kanał zdarzeń (ADR-0100), `Idempotency-Key`, edycję i wyłączanie kont oraz dane firmy i domeny (ADR-0101). MonorisePortal (panel firmy) i TimoTime (próba integracji z Core) korzystają z tych bibliotek i wyglądu `ui`. Następny krok: kolejka e-maili w Core, potem stan wysyłki zaproszeń w Portalu. AvenMail czeka.
+Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (ADR-0098), `permissions`, `events`, `sdk` i `testing`. Core (`/core/v1`, OpenAPI z kodu) ma strukturę firmy, role z zakresem, zaproszenia z kolejką e-maili, dostęp do aplikacji, migawkę uprawnień, dziennik, kanał zdarzeń (ADR-0100), `Idempotency-Key`, edycję i wyłączanie kont, dane firmy i domeny (ADR-0101) oraz reset hasła. MonorisePortal (panel firmy) i TimoTime (próba integracji z Core) korzystają z tych bibliotek i wyglądu `ui`. KivoTasks (zadania i projekty wzorem Linear, ADR-0103) ma etap 0 (szkielet). Następny krok: etap 1 KivoTasks (zadania), potem moduł powiadomień Core (ADR-0048). AvenMail czeka.
 
 ### Utrzymanie tych zasad
 
