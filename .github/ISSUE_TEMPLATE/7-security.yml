@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: 🔒 Utwardzanie bezpieczeństwa
 description: Hardening, zasady, ryzyko zależności. NIE dla żywych podatności.
-labels:
-  - "type: 🔒 security"
-  - "meta: ❓ needs triage"
+type: "🔒 Security"
 projects:
   - Monorise-Team/3
 body:

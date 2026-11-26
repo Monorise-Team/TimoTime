@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: ♻️ Refaktor / wydajność
 description: Poprawa kształtu albo szybkości istniejącego kodu, bez zmiany tego, co robi.
-labels:
-  - "type: ♻️ refactor"
-  - "meta: ❓ needs triage"
+type: "♻️ Refactor"
 projects:
   - Monorise-Team/3
 body:
@@ -11,7 +9,7 @@ body:
     id: kind
     attributes:
       label: Rodzaj
-      description: "Wydajność dostaje przy triage etykietę `type: ⚡ perf`."
+      description: "Przy wyborze wydajności automat zmienia typ zgłoszenia na `⚡ Performance`."
       options:
         - Refaktor, czyli struktura, czytelność, duplikacja
         - Wydajność, czyli szybkość, pamięć, rozmiar paczki, koszt zapytań

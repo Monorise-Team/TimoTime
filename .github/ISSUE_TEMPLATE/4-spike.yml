@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: 🔍 Spike / rozpoznanie
 description: Ograniczone czasowo śledztwo. Efektem jest decyzja, a nie wdrożony kod.
-labels:
-  - "type: 🔍 spike"
-  - "meta: ❓ needs triage"
+type: "🔍 Spike"
 projects:
   - Monorise-Team/3
 body:

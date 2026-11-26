@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: ✨ Nowa funkcja
 description: Nowa możliwość dla użytkownika albo rozbudowa istniejącej.
-labels:
-  - "type: ✨ feature"
-  - "meta: ❓ needs triage"
+type: "✨ Feature"
 projects:
   - Monorise-Team/3
 body:

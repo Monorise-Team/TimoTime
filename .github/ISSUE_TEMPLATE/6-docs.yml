@@ -1,9 +1,7 @@
 # Wygenerowane z Monorise-Team/.github (templates/) przez scripts/repo-setup.mjs; zmieniaj wzorzec, nie ten plik.
 name: 📚 Dokumentacja
 description: Czegoś brakuje, coś jest błędne, nieaktualne albo niejasne.
-labels:
-  - "type: 📚 docs"
-  - "meta: ❓ needs triage"
+type: "📚 Docs"
 projects:
   - Monorise-Team/3
 body:
