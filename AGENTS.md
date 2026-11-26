@@ -59,7 +59,9 @@ Gotowe biblioteki: `config`, `tokens`, `ui`, `auth` (ADR-0098), `permissions`, `
 
 ### Utrzymanie tych zasad
 
-Ten blok, `GEMINI.md`, `.github/copilot-instructions.md` i `sync-shared.yml` powstają z `templates/agents/` w Monorise-Team/.github; zmieniaj je tylko tam. Codzienna synchronizacja sama dodaje, zmienia i usuwa je w repozytoriach. Zasady jednego repozytorium pisz pod tym blokiem. Tech lead aktualizuje „Kierunek” po każdym większym kroku.
+Ten blok, `GEMINI.md`, `.github/copilot-instructions.md` i `sync-shared.yml` powstają z `templates/agents/` w Monorise-Team/.github; zmieniaj je tylko tam. Codzienna synchronizacja sama dodaje, zmienia i usuwa je w repozytoriach. Tech lead aktualizuje „Kierunek” po każdym większym kroku.
+
+Pod tym blokiem w `AGENTS.md` trzymaj tylko zasady repozytorium i linki; szczegóły (opisy modułów, funkcje bazy, polecenia, przykłady) przenoś do `docs/agents/<temat>.md` i linkuj z `AGENTS.md`. Limit `AGENTS.md` w Antigravity to 24 000 bajtów UTF-8 (ostrzeżenie powyżej 20 000).
 
 <!-- END:monorise-shared -->
 
