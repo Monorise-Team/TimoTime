@@ -13,6 +13,7 @@ import { ApiFailure } from "./api";
 import type { Caller } from "./auth";
 import { getDb } from "./db";
 import { assertTimePermission } from "./permissions";
+import { trackOrganizationForReminders } from "./reminder-orgs";
 
 const OPEN_ENTRY_INDEX = "time_entries_one_open_per_account_idx";
 
@@ -110,6 +111,7 @@ export async function startTimeEntry(caller: Caller, input: StartTimeEntryInput)
         },
       });
     });
+    trackOrganizationForReminders(caller.organizationId);
     return serializeTimeEntry(row);
   } catch (error) {
     if (isOpenEntryConflict(error)) {

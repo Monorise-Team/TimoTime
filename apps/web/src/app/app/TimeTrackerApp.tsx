@@ -20,15 +20,17 @@ import {
   AUTH_ERROR_MESSAGES,
   DEFAULT_NO_ACCESS_MESSAGE,
   VIEW_HASHES,
+  buildSignInHref,
   formatStartToastTitle,
   formatStopToastTitle,
   isAccessDeniedError,
+  parseReminderDeepLink,
   parseViewFromHash,
   readClock,
   type AppView,
 } from "./app-views";
 
-function subscribeHash(onStoreChange: () => void): () => void {
+function subscribeLocation(onStoreChange: () => void): () => void {
   window.addEventListener("hashchange", onStoreChange);
   window.addEventListener("popstate", onStoreChange);
   return () => {
@@ -41,7 +43,11 @@ function getHashSnapshot(): string {
   return window.location.hash;
 }
 
-function getServerHashSnapshot(): string {
+function getSearchSnapshot(): string {
+  return window.location.search;
+}
+
+function getEmptySnapshot(): string {
   return "";
 }
 
@@ -59,7 +65,10 @@ export function TimeTrackerApp() {
 function TimeTrackerContent() {
   const client = useMemo(() => createClient(), []);
   const { toast } = useToast();
-  const hash = useSyncExternalStore(subscribeHash, getHashSnapshot, getServerHashSnapshot);
+  const hash = useSyncExternalStore(subscribeLocation, getHashSnapshot, getEmptySnapshot);
+  const search = useSyncExternalStore(subscribeLocation, getSearchSnapshot, getEmptySnapshot);
+  const deepLink = useMemo(() => parseReminderDeepLink(search), [search]);
+  const signInHref = useMemo(() => buildSignInHref({ pathname: "/", search, hash }), [search, hash]);
 
   const [me, setMe] = useState<Me | null>(null);
   const [authState, setAuthState] = useState<"loading" | "signed-out" | "signed-in" | "error">("loading");
@@ -353,7 +362,7 @@ function TimeTrackerContent() {
   }
 
   if (authState === "signed-out") {
-    return <SignedOutView authError={authError} />;
+    return <SignedOutView authError={authError} signInHref={signInHref} />;
   }
 
   if (authState === "error" || !me) {
@@ -411,6 +420,7 @@ function TimeTrackerContent() {
           refreshing={refreshing}
           todayGroups={todayGroups}
           weekGroups={weekGroups}
+          deepLink={deepLink}
           onStart={handleStartClick}
           onStop={handleStopClick}
           onRefresh={handleRefreshClick}
