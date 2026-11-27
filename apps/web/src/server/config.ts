@@ -6,13 +6,16 @@ const list = (value: string | undefined, fallback = "") =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const parseEventFeedIntervalMs = (value: string | undefined, fallback: number): number => {
+const parseIntervalMs = (value: string | undefined, fallback: number): number => {
   if (value === undefined || value.trim() === "") return fallback;
   const trimmed = value.trim();
   if (!/^(0|[1-9][0-9]*)$/.test(trimmed)) return 0;
   const parsed = Number(trimmed);
   return Number.isSafeInteger(parsed) ? parsed : 0;
 };
+
+/** Domyślny interwał zadania przypomnień o czasie pracy w ms (co 5 minut). */
+export const DEFAULT_REMINDERS_INTERVAL_MS = 5 * 60_000;
 
 /** Ustawienia serwera ze zmiennych środowiskowych (lokalnie `.env.local`, tworzy go `pnpm setup:env`). */
 export const config = {
@@ -60,6 +63,10 @@ export const config = {
   /** Interwał odpytywania kanału zdarzeń Core w ms (0 wyłącza; domyślnie 5000 w development, 0 poza nim). */
   get eventFeedIntervalMs() {
     const fallback = process.env.NODE_ENV === "development" ? 5000 : 0;
-    return parseEventFeedIntervalMs(process.env.TIMOTIME_EVENT_FEED_INTERVAL_MS, fallback);
+    return parseIntervalMs(process.env.TIMOTIME_EVENT_FEED_INTERVAL_MS, fallback);
+  },
+  /** Interwał zadania przypomnień o czasie pracy w ms (0 wyłącza; domyślnie co 5 minut). */
+  get remindersIntervalMs() {
+    return parseIntervalMs(process.env.TIMOTIME_REMINDERS_INTERVAL_MS, DEFAULT_REMINDERS_INTERVAL_MS);
   },
 };

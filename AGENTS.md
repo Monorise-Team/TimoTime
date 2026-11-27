@@ -94,6 +94,8 @@ Ewidencja czasu pracy Monorise w przeglądarce i na telefonie (ADR-0095). Logowa
 
 - `pnpm check` wymaga uruchomionej lokalnej bazy PostgreSQL (`pnpm db:up && pnpm db:migrate`).
 - Zmiany w logowaniu, uprawnieniach i strukturze bazy scalane są dopiero po zgodzie właściciela projektu.
+- Token maszynowy serwera (`timotime-web`, `apps/web/src/server/core-machine.ts`) korzysta z zakresów `core:permissions.read core:directory.read core:events.read core:notifications.send`.
+- Zadanie w tle wysyłające przypomnienia e-mail (`timotime.reminders`, `TIMOTIME_REMINDERS_INTERVAL_MS`, domyślnie co 5 min) startuje w `apps/web/src/instrumentation.ts`; szczegóły w [docs/agents/reminders.md](docs/agents/reminders.md).
 
 ## Polecenia
 

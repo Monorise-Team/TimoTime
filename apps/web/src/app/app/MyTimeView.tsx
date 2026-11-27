@@ -16,7 +16,7 @@ import {
   TextField,
 } from "@monorise-team/ui";
 import { Briefcase, Clock, Coffee, Home, Play, RefreshCw, Square } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   entryDurationMs,
   formatDayHeading,
@@ -25,7 +25,7 @@ import {
   formatTime,
   type DayGroup,
 } from "@/lib/time-format";
-import { KIND_TONES } from "./app-views";
+import { KIND_TONES, type ReminderDeepLink } from "./app-views";
 
 const STATUS_ACTIONS: { kind: TimeEntryKind; label: string; icon: ReactNode }[] = [
   { kind: "WORK", label: "Rozpocznij pracę", icon: <Play aria-hidden /> },
@@ -46,6 +46,7 @@ export interface MyTimeViewProps {
   refreshing: boolean;
   todayGroups: DayGroup[];
   weekGroups: DayGroup[];
+  deepLink?: ReminderDeepLink;
   onStart: (kind: TimeEntryKind) => void;
   onStop: () => void;
   onRefresh: () => void;
@@ -65,12 +66,34 @@ export function MyTimeView({
   refreshing,
   todayGroups,
   weekGroups,
+  deepLink,
   onStart,
   onStop,
   onRefresh,
   onGoToTeam,
 }: MyTimeViewProps) {
   const elapsedMs = current ? entryDurationMs(current, nowMs) : 0;
+  const [selectedTab, setSelectedTab] = useState<"today" | "week" | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  const defaultTab: "today" | "week" =
+    deepLink?.tab === "week" || (deepLink?.date !== null && deepLink?.date !== undefined) ? "week" : "today";
+  const activeTab = selectedTab ?? defaultTab;
+
+  const deepLinkBanner =
+    !bannerDismissed && canTrackOwn
+      ? deepLink?.entryId && current?.id === deepLink.entryId
+        ? {
+            title: "Sprawdź otwarty wpis czasu pracy",
+            message: "Ten wpis nadal trwa. Jeśli dzień pracy już się skończył, zatrzymaj stoper poniżej.",
+          }
+        : deepLink?.date
+          ? {
+              title: "Przypomnienie o czasie pracy",
+              message: `Sprawdź wpisy za dzień: ${formatDayHeading(deepLink.date).toLowerCase()}.`,
+            }
+          : null
+      : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -96,6 +119,15 @@ export function MyTimeView({
         />
       ) : (
         <>
+          {deepLinkBanner ? (
+            <Banner
+              tone="accent"
+              title={deepLinkBanner.title}
+              message={deepLinkBanner.message}
+              onDismiss={() => setBannerDismissed(true)}
+            />
+          ) : null}
+
           <Card surface="middle" className="flex flex-col gap-4 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col gap-1">
@@ -158,7 +190,11 @@ export function MyTimeView({
           </Card>
 
           <Card surface="middle" className="flex flex-col">
-            <Tabs defaultValue="today" className="flex flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setSelectedTab(value === "week" ? "week" : "today")}
+              className="flex flex-col"
+            >
               <CardHeader className="justify-between">
                 <CardTitle>Wpisy czasu pracy</CardTitle>
                 <TabsList aria-label="Zakres wpisów">

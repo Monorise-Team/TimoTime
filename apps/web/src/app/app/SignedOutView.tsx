@@ -37,7 +37,13 @@ export function LoadingView() {
 }
 
 /** Ekran wylogowany z opcjonalnym komunikatem o błędzie logowania z `AUTH_ERROR_MESSAGES`. */
-export function SignedOutView({ authError }: { authError: string | null }) {
+export function SignedOutView({
+  authError,
+  signInHref = "/api/auth/sign-in?returnTo=/",
+}: {
+  authError: string | null;
+  signInHref?: string;
+}) {
   return (
     <CenteredCardLayout>
       <h1 className="font-display text-2xl font-semibold">Zaloguj się do TimoTime</h1>
@@ -46,7 +52,7 @@ export function SignedOutView({ authError }: { authError: string | null }) {
       </p>
       {authError ? <Banner tone="danger" message={authError} /> : null}
       <Button asChild variant="primary" size="lg" className="w-full">
-        <a href="/api/auth/sign-in?returnTo=/">Zaloguj się kontem Monorise</a>
+        <a href={signInHref}>Zaloguj się kontem Monorise</a>
       </Button>
     </CenteredCardLayout>
   );

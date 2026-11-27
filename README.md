@@ -55,7 +55,7 @@ Zmiana schematu: edytuj `packages/db/prisma/schema.prisma`, wygeneruj migrację 
 
 ### Jak serwer TimoTime sprawdza uprawnienia
 
-Serwer TimoTime pobiera w MonoriseCore token maszynowy OAuth 2.1 (`grant_type=client_credentials`, poufny klient `timotime-web`, zakresy `core:permissions.read core:directory.read`, pamięć podręczna do 30 sekund przed wygaśnięciem) i przez `@monorise-team/sdk` odczytuje migawkę uprawnień (`GET /core/v1/products/timotime/permission-snapshot`). Identyfikatory firmy (`org_id`), konta (`sub`) oraz wersja uprawnień (`authz_rev`) pochodzą wyłącznie ze zweryfikowanego tokenu lub sesji użytkownika.
+Serwer TimoTime pobiera w MonoriseCore token maszynowy OAuth 2.1 (`grant_type=client_credentials`, poufny klient `timotime-web`, zakresy `core:permissions.read core:directory.read core:events.read core:notifications.send`, pamięć podręczna do 30 sekund przed wygaśnięciem) i przez `@monorise-team/sdk` odczytuje migawkę uprawnień (`GET /core/v1/products/timotime/permission-snapshot`), katalog firm i pracowników oraz zleca powiadomienia e-mail. Identyfikatory firmy (`org_id`), konta (`sub`) oraz wersja uprawnień (`authz_rev`) pochodzą wyłącznie ze zweryfikowanego tokenu lub sesji użytkownika.
 
 Migawki trzyma jedna pamięć podręczna `createPermissionCache` z `@monorise-team/permissions` (maksymalnie 5 minut, odświeżana od razu po wzroście `authz_rev` w tokenie). Sprawdzanie uprawnień odbywa się w jednym miejscu (`apps/web/src/server/permissions.ts`):
 
@@ -74,6 +74,15 @@ Gdy w MonoriseCore zmienią się uprawnienia lub dostęp osoby, Core zapisuje nu
 - przy starcie serwera Node.js odpytywanie uruchamia `apps/web/src/instrumentation.ts`,
 - stan kanału trzymają dwie tabele w schemacie `public` bez RLS (nie zawierają danych osób ani firm): `event_feed_cursors` (ostatni przetworzony numer `sequence` dla kanału `core`) oraz `processed_events` (deduplikacja przetworzonych zdarzeń).
 - ograniczenie: pamięć uprawnień jest w pamięci procesu, a kursor i przetworzone zdarzenia są wspólne w bazie, więc przy kilku instancjach serwera zdarzenie wyczyści pamięć tylko w tej, która je pobrała (pozostałe odświeżą migawkę najpóźniej po 5 minutach albo od razu przy wyższym `authz_rev` w tokenie). Dziś TimoTime działa jako jeden proces; przed skalowaniem potrzebna jest wspólna pamięć podręczna albo kursor na instancję.
+
+### Przypomnienia e-mail o czasie pracy
+
+Serwer TimoTime uruchamia przy starcie (`apps/web/src/instrumentation.ts`) cykliczne zadanie przypomnień wysyłanych przez moduł powiadomień MonoriseCore (`timotime.reminders`, ADR-0048) na podstawie strefy czasowej firmy i efektywnego grafiku pracy z Core Directory (`GET /core/v1/products/timotime/directory/organization` i `.../employees`). MonoriseCore samodzielnie sprawdza aktywny dostęp pracownika oraz jego ustawienia powiadomień, a deterministyczny nagłówek `Idempotency-Key` pilnuje, aby każde przypomnienie wyszło najwyżej raz.
+
+- **Brak godzin:** od 09:00 czasu lokalnego firmy w dzień pracy pracownika, gdy poprzedni dzień pracy (z pominięciem dni wolnych i polskich świąt ustawowych, w tym 24.12 oraz świąt ruchomych zależnych od Wielkanocy; maksymalnie 14 dni wstecz) nie ma żadnego wpisu `WORK`.
+- **Zapomniany stoper:** otwarty wpis `WORK` trwający dłużej niż plan dnia startu + 120 minut (albo 600 minut przy braku grafiku lub w dzień wolny/święto).
+- **Podsumowanie tygodnia:** od 15:00 czasu lokalnego w ostatni dzień pracy tygodnia ISO, gdy czas wpisów `WORK` (łącznie z trwającym stoperem) jest poniżej planu tygodnia pomniejszonego o święta; treść wskazuje brakujący czas zaokrąglony do 15 minut.
+- **Konfiguracja:** interwał ustawia `TIMOTIME_REMINDERS_INTERVAL_MS` w milisekundach (domyślnie `300000`, czyli co 5 minut; `0` wyłącza zadanie; przykładowe zmienne w [`.env.example`](.env.example), szczegóły techniczne w [`docs/agents/reminders.md`](docs/agents/reminders.md)).
 
 ### Czego potrzebuje osoba, aby korzystać z TimoTime
 

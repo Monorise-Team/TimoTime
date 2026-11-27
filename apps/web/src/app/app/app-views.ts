@@ -70,3 +70,62 @@ export function formatStartToastTitle(entry: Pick<TimeEntry, "kind" | "startedAt
 export function formatStopToastTitle(entry: TimeEntry, nowMs: number): string {
   return `Zakończono: ${formatDuration(entryDurationMs(entry, nowMs))}`;
 }
+
+export interface ReminderDeepLink {
+  /** Docelowa zakładka listy wpisów („today” albo „week”). */
+  readonly tab: "today" | "week";
+  /** Wybrana data z przypomnienia (`?date=YYYY-MM-DD`). */
+  readonly date: string | null;
+  /** Identyfikator wpisu z przypomnienia o stoperze (`?entry=<id>`). */
+  readonly entryId: string | null;
+  /** Tydzień ISO z podsumowania tygodnia (`?week=YYYY-Www`). */
+  readonly week: string | null;
+}
+
+const VALID_DATE_KEY = /^(\d{4})-(\d{2})-(\d{2})$/;
+const VALID_ISO_WEEK_KEY = /^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/;
+
+function parseValidDateKey(raw: string | null): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  const match = VALID_DATE_KEY.exec(trimmed);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() + 1 !== month || probe.getUTCDate() !== day) {
+    return null;
+  }
+  return trimmed;
+}
+
+/**
+ * Odczytuje parametry głębokiego linku z przypomnień e-mail (`?date=YYYY-MM-DD`, `?entry=<id>`,
+ * `?view=week&week=YYYY-Www`). Niepoprawne wartości są bezpiecznie ignorowane.
+ */
+export function parseReminderDeepLink(search: string): ReminderDeepLink {
+  const params = new URLSearchParams(search);
+  const date = parseValidDateKey(params.get("date"));
+  const rawEntry = params.get("entry")?.trim() ?? "";
+  const entryId = rawEntry.length > 0 && rawEntry.length <= 128 ? rawEntry : null;
+  const rawWeek = params.get("week")?.trim() ?? "";
+  const week = VALID_ISO_WEEK_KEY.test(rawWeek) ? rawWeek : null;
+  const view = params.get("view")?.trim().toLowerCase();
+  const tab: "today" | "week" = view === "week" || week !== null ? "week" : "today";
+  return { tab, date, entryId, week };
+}
+
+/**
+ * Buduje adres `/api/auth/sign-in?returnTo=...` zachowujący bezpieczne parametry linku z e-maila
+ * (z pominięciem `auth_error` i blokadą przekierowań na obce domeny).
+ */
+export function buildSignInHref(location: { pathname: string; search: string; hash: string }): string {
+  const pathname = location.pathname.startsWith("/") && !location.pathname.startsWith("//") ? location.pathname : "/";
+  const params = new URLSearchParams(location.search);
+  params.delete("auth_error");
+  const cleanSearch = params.toString();
+  const hash = location.hash.startsWith("#") ? location.hash : "";
+  const returnTo = `${pathname}${cleanSearch ? `?${cleanSearch}` : ""}${hash}`;
+  return `/api/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
+}

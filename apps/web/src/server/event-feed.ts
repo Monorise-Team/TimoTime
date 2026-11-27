@@ -13,6 +13,7 @@ import { config } from "./config";
 import { getMachineCoreClient } from "./core";
 import { getDb } from "./db";
 import { invalidatePermissionCache } from "./permissions";
+import { trackOrganizationForReminders } from "./reminder-orgs";
 
 const CORE_EVENT_CONSUMER_NAME = "timotime";
 const CORE_FEED_CURSOR_ID = "core";
@@ -72,6 +73,9 @@ export function createCoreEventConsumer(db: EventFeedDb): EventConsumer {
     },
     handlers: {
       "organization.permissions.changed": async (event) => {
+        if (event.organizationId) {
+          trackOrganizationForReminders(event.organizationId);
+        }
         invalidatePermissionCache({
           organizationId: event.organizationId ?? undefined,
           accountId: event.resourceId,

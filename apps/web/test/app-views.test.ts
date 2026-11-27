@@ -1,6 +1,12 @@
 import type { TimeEntry } from "@timotime/contracts";
 import { describe, expect, it } from "vitest";
-import { formatStartToastTitle, formatStopToastTitle, parseViewFromHash } from "@/app/app/app-views";
+import {
+  buildSignInHref,
+  formatStartToastTitle,
+  formatStopToastTitle,
+  parseReminderDeepLink,
+  parseViewFromHash,
+} from "@/app/app/app-views";
 import { formatTime } from "@/lib/time-format";
 
 describe("rozpoznawanie widoku z fragmentu adresu (hash)", () => {
@@ -56,5 +62,43 @@ describe("komunikaty powiadomień po starcie i stopie", () => {
       updatedAt: end.toISOString(),
     };
     expect(formatStopToastTitle(entry, end.getTime())).toBe("Zakończono: 1 godz. 12 min");
+  });
+});
+
+describe("głębokie linki z przypomnień e-mail", () => {
+  it("rozpoznaje poprawne parametry date, entry oraz view=week i odrzuca błędne", () => {
+    expect(parseReminderDeepLink("?date=2026-11-20")).toEqual({
+      tab: "today",
+      date: "2026-11-20",
+      entryId: null,
+      week: null,
+    });
+    expect(parseReminderDeepLink("?entry=019a0000-0000-7000-8000-000000000001")).toEqual({
+      tab: "today",
+      date: null,
+      entryId: "019a0000-0000-7000-8000-000000000001",
+      week: null,
+    });
+    expect(parseReminderDeepLink("?view=week&week=2026-W47")).toEqual({
+      tab: "week",
+      date: null,
+      entryId: null,
+      week: "2026-W47",
+    });
+    expect(parseReminderDeepLink("?date=2026-02-31&week=bad")).toEqual({
+      tab: "today",
+      date: null,
+      entryId: null,
+      week: null,
+    });
+  });
+
+  it("zachowuje parametry głębokiego linku w adresie logowania bez auth_error i bez otwartych przekierowań", () => {
+    expect(buildSignInHref({ pathname: "/", search: "?date=2026-11-20&auth_error=expired", hash: "#moj-czas" })).toBe(
+      "/api/auth/sign-in?returnTo=%2F%3Fdate%3D2026-11-20%23moj-czas",
+    );
+    expect(buildSignInHref({ pathname: "//evil.test/phish", search: "", hash: "" })).toBe(
+      "/api/auth/sign-in?returnTo=%2F",
+    );
   });
 });
