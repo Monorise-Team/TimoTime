@@ -21,7 +21,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe("token maszynowy MonoriseCore (core-machine)", () => {
-  it("pobiera token z zakresem core:permissions.read core:directory.read core:events.read i cachuje go do 30 s przed wygaśnięciem", async () => {
+  it("pobiera token z zakresem core:permissions.read core:directory.read core:events.read core:notifications.send i cachuje go do 30 s przed wygaśnięciem", async () => {
     let clock = 1_000_000;
     let issued = 0;
     const seenBodies: URLSearchParams[] = [];
@@ -46,7 +46,9 @@ describe("token maszynowy MonoriseCore (core-machine)", () => {
     expect(seenBodies[0]?.get("client_id")).toBe("timotime-web");
     expect(seenBodies[0]?.get("client_secret")).toBe(BASE_CONFIG.clientSecret);
     expect(seenBodies[0]?.get("resource")).toBe("http://core-api.test");
-    expect(seenBodies[0]?.get("scope")).toBe("core:permissions.read core:directory.read core:events.read");
+    expect(seenBodies[0]?.get("scope")).toBe(
+      "core:permissions.read core:directory.read core:events.read core:notifications.send",
+    );
 
     // 269 s później nadal w pamięci podręcznej (zostało > 30 s)
     clock += 269_000;

@@ -49,8 +49,9 @@ export function createUserCoreClient(session: Session): CoreClient {
 
 /**
  * Klient Core API po stronie serwera z tokenem maszynowym produktu (`timotime-web`,
- * zakresy `core:permissions.read core:directory.read core:events.read`). Służy do pobierania
- * migawki uprawnień, katalogu jednostek i pracowników oraz kanału zdarzeń przez `@monorise-team/sdk`.
+ * zakresy `core:permissions.read core:directory.read core:events.read core:notifications.send`).
+ * Służy do pobierania migawki uprawnień, katalogu firm, jednostek i pracowników, kanału zdarzeń
+ * oraz zlecania powiadomień e-mail przez `@monorise-team/sdk`.
  */
 export function getMachineCoreClient(): CoreClient {
   return createCoreClient({
