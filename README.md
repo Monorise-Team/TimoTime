@@ -24,7 +24,7 @@ pnpm oauth:seed
 
 pnpm install
 pnpm setup:env          # apps/web/.env.local i packages/db/.env; sekret timotime-web bierze z MonoriseCore
-pnpm db:up              # PostgreSQL w Dockerze (kontener timo-time-postgres-1, port 5435)
+pnpm db:up              # PostgreSQL w Dockerze (kontener timo-time-database, port 5435)
 pnpm db:migrate         # migracje bazy timo_time i bazy testów timo_time_test
 pnpm dev                # http://time.localhost:3300 (strona i API) i http://timo-time.localhost:3300 (aplikacja)
 ```

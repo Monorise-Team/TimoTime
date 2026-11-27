@@ -4,7 +4,8 @@
 name: timo-time
 
 services:
-  postgres:
+  database:
+    container_name: timo-time-database
     image: postgres:17-alpine
     environment:
       POSTGRES_PASSWORD: postgres
